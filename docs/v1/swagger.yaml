@@ -1,0 +1,24 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: A RESTful API built with Go and Fiber
+  title: Pitstop API
+  version: "1.0"
+paths:
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all posts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get all posts
+          schema:
+            type: string
+      summary: Get all posts
+      tags:
+      - posts
+swagger: "2.0"
