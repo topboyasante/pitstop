@@ -5,12 +5,14 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/topboyasante/pitstop/internal/logger"
+	"golang.org/x/oauth2"
 )
 
 // The API configuration structure
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	OAuth    oauth2.Config
 }
 
 // Server configuration structure
@@ -58,6 +60,9 @@ func New() (*Config, error) {
 	dbPassword := getEnv("PGPASSWORD", "")
 	dbSslMode := getEnv("PGSSLMODE", "disable")
 	dbChannelBinding := getEnv("PGCHANNELBINDING", "disable")
+	oauthClientID := getEnv("OAUTH_CLIENT_ID", "")
+	oauthClientSecret := getEnv("OAUTH_CLIENT_SECRET", "")
+	oauthRedirectURI := getEnv("OAUTH_REDIRECT_URI", "")
 
 	logger.Info("Configuration loaded successfully",
 		"server_port", port,
@@ -74,6 +79,12 @@ func New() (*Config, error) {
 			Password:       dbPassword,
 			SslMode:        dbSslMode,
 			ChannelBinding: dbChannelBinding,
+		},
+		OAuth: oauth2.Config{
+			ClientID:     oauthClientID,
+			ClientSecret: oauthClientSecret,
+			RedirectURL:  oauthRedirectURI,
+			Scopes:       []string{"profile", "email"},
 		},
 	}, nil
 }

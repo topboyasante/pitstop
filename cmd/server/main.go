@@ -36,7 +36,7 @@ func main() {
 	validator := validator.New()
 
 	// Initialize provider with dependency injection
-	provider := provider.NewProvider(db, validator)
+	provider := provider.NewProvider(db, validator, config)
 
 	app := fiber.New()
 
@@ -49,6 +49,7 @@ func main() {
 
 	v1 := app.Group("/api/v1")
 	routes.RegisterV1PostRoutes(v1, provider)
+	routes.RegisterV1AuthRoutes(v1, provider)
 
 	if err := app.Listen(":" + config.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)
