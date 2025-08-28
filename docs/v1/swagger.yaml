@@ -6,6 +6,46 @@ info:
   title: Pitstop API
   version: "1.0"
 paths:
+  /auth:
+    get:
+      description: Redirects user to Google OAuth for authentication
+      responses:
+        "303":
+          description: Redirects to Google OAuth
+          schema:
+            type: string
+      summary: Start OAuth authentication
+      tags:
+      - Auth
+  /auth/callback:
+    get:
+      description: Handles OAuth callback and exchanges authorization code for access
+        token
+      parameters:
+      - description: Authorization code from OAuth provider
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter for CSRF protection
+        in: query
+        name: state
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Authentication successful with access token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - missing code or invalid state
+          schema:
+            additionalProperties: true
+            type: object
+      summary: OAuth callback handler
+      tags:
+      - Auth
   /posts:
     get:
       consumes:
@@ -15,9 +55,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: Get all posts
+          description: List of posts
           schema:
-            type: string
+            items:
+              type: string
+            type: array
       summary: Get all posts
       tags:
       - posts

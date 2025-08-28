@@ -15,6 +15,64 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth": {
+            "get": {
+                "description": "Redirects user to Google OAuth for authentication",
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Start OAuth authentication",
+                "responses": {
+                    "303": {
+                        "description": "Redirects to Google OAuth",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/callback": {
+            "get": {
+                "description": "Handles OAuth callback and exchanges authorization code for access token",
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "OAuth callback handler",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code from OAuth provider",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State parameter for CSRF protection",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful with access token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing code or invalid state",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/posts": {
             "get": {
                 "description": "Retrieve a list of all posts",
@@ -30,9 +88,12 @@ const docTemplate = `{
                 "summary": "Get all posts",
                 "responses": {
                     "200": {
-                        "description": "Get all posts",
+                        "description": "List of posts",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         }
                     }
                 }

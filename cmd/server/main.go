@@ -16,6 +16,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/database"
 	"github.com/topboyasante/pitstop/internal/logger"
 	"github.com/topboyasante/pitstop/internal/provider"
+	_ "github.com/topboyasante/pitstop/docs/v1"
 )
 
 func main() {

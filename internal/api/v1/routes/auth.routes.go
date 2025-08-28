@@ -10,5 +10,6 @@ func RegisterV1AuthRoutes(a fiber.Router, p *provider.Provider) {
 
 	{
 		authRoutes.Get("/", p.AuthController.Authenticate)
+		authRoutes.Get("/callback", p.AuthController.Callback)
 	}
 }
