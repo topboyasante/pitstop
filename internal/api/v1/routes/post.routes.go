@@ -2,14 +2,13 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/topboyasante/pitstop/internal/api/v1/controller"
+	"github.com/topboyasante/pitstop/internal/provider"
 )
 
-func RegisterPostRoutes(a fiber.Router) {
-	postController := controller.NewPostController()
+func RegisterV1PostRoutes(a fiber.Router, p *provider.Provider) {
 	postRoutes := a.Group("/posts")
 
 	{
-		postRoutes.Get("/", postController.GetAllPosts)
+		postRoutes.Get("/", p.PostController.GetAllPosts)
 	}
 }

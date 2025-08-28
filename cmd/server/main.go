@@ -8,12 +8,14 @@ package main
 import (
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/api/v1/routes"
 	"github.com/topboyasante/pitstop/internal/config"
 	"github.com/topboyasante/pitstop/internal/database"
 	"github.com/topboyasante/pitstop/internal/logger"
+	"github.com/topboyasante/pitstop/internal/provider"
 )
 
 func main() {
@@ -24,11 +26,17 @@ func main() {
 		logger.Error("failed to start server - configuration error: %v", err)
 	}
 
-	_, err = database.Init(config)
+	db, err := database.Init(config)
 	if err != nil {
 		logger.Fatal("failed to connect to database: %v", err)
 		log.Panicf("error: %s", err)
 	}
+
+	// Initialize validator
+	validator := validator.New()
+
+	// Initialize provider with dependency injection
+	provider := provider.NewProvider(db, validator)
 
 	app := fiber.New()
 
@@ -36,10 +44,11 @@ func main() {
 		BasePath: "/api/v1/",
 		FilePath: "./docs/v1/swagger.json",
 		Path:     "docs",
+		Title:    "Pitstop API Documentation",
 	}))
 
 	v1 := app.Group("/api/v1")
-	routes.RegisterPostRoutes(v1)
+	routes.RegisterV1PostRoutes(v1, provider)
 
 	if err := app.Listen(":" + config.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)
