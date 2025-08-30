@@ -1,4 +1,68 @@
 basePath: /api/v1
+definitions:
+  models.AuthData:
+    properties:
+      message:
+        example: Authentication successful
+        type: string
+      token:
+        example: ya29.a0AfH6SMC...
+        type: string
+    type: object
+  models.AuthSuccessResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.AuthData'
+      request_id:
+        example: req_8n3mN9pQ2x
+        type: string
+      timestamp:
+        example: "2023-12-01T10:30:00Z"
+        type: string
+    type: object
+  models.BadRequestErrorDetail:
+    properties:
+      code:
+        example: INVALID_REQUEST
+        type: string
+      message:
+        example: Authorization code is required
+        type: string
+      request_id:
+        example: req_8n3mN9pQ2x
+        type: string
+      timestamp:
+        example: "2023-12-01T10:30:00Z"
+        type: string
+    type: object
+  models.BadRequestErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/models.BadRequestErrorDetail'
+    type: object
+  models.ErrorDetail:
+    properties:
+      code:
+        example: VALIDATION_FAILED
+        type: string
+      details:
+        additionalProperties: {}
+        type: object
+      message:
+        example: The request contains 2 validation errors
+        type: string
+      request_id:
+        example: req_8n3mN9pQ2x
+        type: string
+      timestamp:
+        example: "2023-12-01T10:30:00Z"
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/models.ErrorDetail'
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -12,8 +76,10 @@ paths:
       responses:
         "303":
           description: Redirects to Google OAuth
-          schema:
-            type: string
+          headers:
+            X-Request-ID:
+              description: Request ID for tracing
+              type: string
       summary: Start OAuth authentication
       tags:
       - Auth
@@ -35,14 +101,28 @@ paths:
       responses:
         "200":
           description: Authentication successful with access token
+          headers:
+            X-Request-ID:
+              description: Request ID for tracing
+              type: string
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.AuthSuccessResponse'
         "400":
           description: Bad request - missing code or invalid state
+          headers:
+            X-Request-ID:
+              description: Request ID for tracing
+              type: string
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.BadRequestErrorResponse'
+        "503":
+          description: External service error - OAuth provider failure
+          headers:
+            X-Request-ID:
+              description: Request ID for tracing
+              type: string
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       summary: OAuth callback handler
       tags:
       - Auth

@@ -15,6 +15,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/config"
 	"github.com/topboyasante/pitstop/internal/database"
 	"github.com/topboyasante/pitstop/internal/logger"
+	"github.com/topboyasante/pitstop/internal/middleware"
 	"github.com/topboyasante/pitstop/internal/provider"
 	_ "github.com/topboyasante/pitstop/docs/v1"
 )
@@ -39,7 +40,12 @@ func main() {
 	// Initialize provider with dependency injection
 	provider := provider.NewProvider(db, validator, config)
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: middleware.ErrorHandler(),
+	})
+
+	// Add request logging middleware
+	app.Use(middleware.RequestLogger())
 
 	app.Use(swagger.New(swagger.Config{
 		BasePath: "/api/v1/",

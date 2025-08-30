@@ -25,8 +25,11 @@ const docTemplate = `{
                 "responses": {
                     "303": {
                         "description": "Redirects to Google OAuth",
-                        "schema": {
-                            "type": "string"
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request ID for tracing"
+                            }
                         }
                     }
                 }
@@ -59,15 +62,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Authentication successful with access token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.AuthSuccessResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request ID for tracing"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad request - missing code or invalid state",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.BadRequestErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request ID for tracing"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "External service error - OAuth provider failure",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        },
+                        "headers": {
+                            "X-Request-ID": {
+                                "type": "string",
+                                "description": "Request ID for tracing"
+                            }
                         }
                     }
                 }
@@ -96,6 +121,99 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.AuthData": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Authentication successful"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "ya29.a0AfH6SMC..."
+                }
+            }
+        },
+        "models.AuthSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.AuthData"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_8n3mN9pQ2x"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-12-01T10:30:00Z"
+                }
+            }
+        },
+        "models.BadRequestErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_REQUEST"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Authorization code is required"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_8n3mN9pQ2x"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-12-01T10:30:00Z"
+                }
+            }
+        },
+        "models.BadRequestErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/models.BadRequestErrorDetail"
+                }
+            }
+        },
+        "models.ErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "VALIDATION_FAILED"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "message": {
+                    "type": "string",
+                    "example": "The request contains 2 validation errors"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_8n3mN9pQ2x"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-12-01T10:30:00Z"
+                }
+            }
+        },
+        "models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/models.ErrorDetail"
                 }
             }
         }
