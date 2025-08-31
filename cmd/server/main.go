@@ -58,7 +58,8 @@ func main() {
 		ErrorHandler: middleware.ErrorHandler(),
 	})
 
-	// Add request logging middleware
+	// Add rate limiting and request logging middleware
+	app.Use(middleware.RateLimiter((provider.Redis)))
 	app.Use(middleware.RequestLogger())
 
 	app.Use(swagger.New(swagger.Config{
