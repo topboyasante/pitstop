@@ -2,37 +2,65 @@ package provider
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/topboyasante/pitstop/internal/api/v1/controllers"
-	"github.com/topboyasante/pitstop/internal/api/v1/repositories"
-	"github.com/topboyasante/pitstop/internal/api/v1/services"
-	"github.com/topboyasante/pitstop/internal/config"
+	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
+	"github.com/topboyasante/pitstop/internal/modules/auth/repository"
+	"github.com/topboyasante/pitstop/internal/modules/auth/service"
+	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/shared/events"
 	"gorm.io/gorm"
 )
 
-// The provider is the central place where all dependencies are initialized and injected.
+// Provider is the central dependency injection container for the modular monolith
 type Provider struct {
-	PostController *controllers.PostController
-	AuthController *controllers.AuthController
-	DB             *gorm.DB
-	config         *config.Config
+	// Database
+	DB *gorm.DB
+
+	// Shared services
+	Config    *config.Config
+	Validator *validator.Validate
+	EventBus  *events.EventBus
+
+	// Auth module
+	AuthHandler *handler.AuthHandler
+
+	// Module dependencies (can be accessed by other modules if needed)
+	UserRepository *repository.UserRepository
+	AuthService    *service.AuthService
 }
 
-func NewProvider(db *gorm.DB, validator *validator.Validate, config *config.Config) *Provider {
-	// Initialize repositories
-	postRepo := repositories.NewPostRepository(db)
+// NewProvider creates and initializes the dependency injection container
+func NewProvider(db *gorm.DB, cfg *config.Config, validator *validator.Validate) *Provider {
+	// Initialize event bus
+	eventBus := events.NewEventBus()
 
-	// Initialize services
-	postService := services.NewPostService(postRepo, validator)
-	authService := services.NewAuthService(config)
+	// Initialize Auth module
+	userRepo := repository.NewUserRepository(db)
+	authService := service.NewAuthService(cfg, userRepo, validator)
+	authHandler := handler.NewAuthHandler(authService)
 
-	// Initialize controllers
-	postController := controllers.NewPostController(postService)
-	authController := controllers.NewAuthController(authService)
+	// Set up event subscribers
+	setupEventSubscribers(eventBus, authService)
 
 	return &Provider{
-		PostController: postController,
-		AuthController: authController,
-		DB:             db,
-		config:         config,
+		DB:        db,
+		Config:    cfg,
+		Validator: validator,
+		EventBus:  eventBus,
+
+		AuthHandler: authHandler,
+
+		UserRepository: userRepo,
+		AuthService:    authService,
 	}
+}
+
+// setupEventSubscribers configures cross-module event handlers
+func setupEventSubscribers(eventBus *events.EventBus, authService *service.AuthService) {
+	// Example: When a user registers, other modules can react
+	events.SubscribeToEvent(&events.UserRegistered{}, func(event events.Event) error {
+		_ = event.(*events.UserRegistered)
+		// Could trigger welcome email, create default garage, etc.
+		// For now, just log
+		return nil
+	})
 }

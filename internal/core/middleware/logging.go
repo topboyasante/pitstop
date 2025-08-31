@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/topboyasante/pitstop/internal/logger"
-	"github.com/topboyasante/pitstop/internal/utils"
+	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
 // RequestLogger creates middleware that logs all requests with structured data

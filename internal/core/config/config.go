@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/topboyasante/pitstop/internal/logger"
+	"github.com/topboyasante/pitstop/internal/core/logger"
 	"golang.org/x/oauth2"
 )
 

@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/topboyasante/pitstop/internal/logger"
-	"github.com/topboyasante/pitstop/internal/utils"
+	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
 // ErrorHandler is a middleware that handles panics and provides consistent error responses

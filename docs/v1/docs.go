@@ -15,44 +15,53 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth": {
+        "/auth/google": {
             "get": {
-                "description": "Redirects user to Google OAuth for authentication",
-                "tags": [
-                    "Auth"
+                "description": "Get Google OAuth authorization URL",
+                "consumes": [
+                    "application/json"
                 ],
-                "summary": "Start OAuth authentication",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Initiate Google OAuth",
                 "responses": {
-                    "303": {
-                        "description": "Redirects to Google OAuth",
-                        "headers": {
-                            "X-Request-ID": {
-                                "type": "string",
-                                "description": "Request ID for tracing"
-                            }
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthURLResponse"
                         }
                     }
                 }
             }
         },
-        "/auth/callback": {
+        "/auth/google/callback": {
             "get": {
-                "description": "Handles OAuth callback and exchanges authorization code for access token",
-                "tags": [
-                    "Auth"
+                "description": "Exchange authorization code for access token",
+                "consumes": [
+                    "application/json"
                 ],
-                "summary": "OAuth callback handler",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Handle Google OAuth callback",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Authorization code from OAuth provider",
+                        "description": "Authorization code",
                         "name": "code",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "State parameter for CSRF protection",
+                        "description": "CSRF state token",
                         "name": "state",
                         "in": "query",
                         "required": true
@@ -60,38 +69,277 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Authentication successful with access token",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.AuthSuccessResponse"
-                        },
-                        "headers": {
-                            "X-Request-ID": {
-                                "type": "string",
-                                "description": "Request ID for tracing"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
                     "400": {
-                        "description": "Bad request - missing code or invalid state",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.BadRequestErrorResponse"
-                        },
-                        "headers": {
-                            "X-Request-ID": {
-                                "type": "string",
-                                "description": "Request ID for tracing"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/profile": {
+            "put": {
+                "description": "Update user profile information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update user profile",
+                "parameters": [
+                    {
+                        "description": "Profile update details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/profile/{id}": {
+            "get": {
+                "description": "Get user profile information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get user profile",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
-                    "503": {
-                        "description": "External service error - OAuth provider failure",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        },
-                        "headers": {
-                            "X-Request-ID": {
-                                "type": "string",
-                                "description": "Request ID for tracing"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Create a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/garages": {
+            "get": {
+                "description": "Retrieve a paginated list of garages",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "garages"
+                ],
+                "summary": "Get all garages",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Garages per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GaragesResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new garage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "garages"
+                ],
+                "summary": "Create a new garage",
+                "parameters": [
+                    {
+                        "description": "Garage details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGarageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GarageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/garages/{id}": {
+            "get": {
+                "description": "Retrieve a specific garage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "garages"
+                ],
+                "summary": "Get a garage by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Garage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GarageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     }
@@ -100,7 +348,7 @@ const docTemplate = `{
         },
         "/posts": {
             "get": {
-                "description": "Retrieve a list of all posts",
+                "description": "Retrieve a paginated list of posts",
                 "consumes": [
                     "application/json"
                 ],
@@ -111,12 +359,191 @@ const docTemplate = `{
                     "posts"
                 ],
                 "summary": "Get all posts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Posts per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of posts",
+                        "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
+                            "$ref": "#/definitions/dto.PostsResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new post",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Create a new post",
+                "parameters": [
+                    {
+                        "description": "Post details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{id}": {
+            "get": {
+                "description": "Retrieve a specific post",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Get a post by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PostResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing post",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Update a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Post update details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an existing post",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Delete a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
                                 "type": "string"
                             }
                         }
@@ -126,94 +553,313 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.AuthData": {
+        "domain.PostType": {
+            "type": "string",
+            "enum": [
+                "question",
+                "tip",
+                "show_off",
+                "general"
+            ],
+            "x-enum-varnames": [
+                "PostTypeQuestion",
+                "PostTypeTip",
+                "PostTypeShowOff",
+                "PostTypeGeneral"
+            ]
+        },
+        "dto.AuthURLResponse": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Authentication successful"
-                },
-                "token": {
-                    "type": "string",
-                    "example": "ya29.a0AfH6SMC..."
+                "auth_url": {
+                    "type": "string"
                 }
             }
         },
-        "models.AuthSuccessResponse": {
+        "dto.CreateGarageRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.AuthData"
-                },
-                "request_id": {
+                "name": {
                     "type": "string",
-                    "example": "req_8n3mN9pQ2x"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2023-12-01T10:30:00Z"
+                    "maxLength": 255,
+                    "minLength": 1
                 }
             }
         },
-        "models.BadRequestErrorDetail": {
+        "dto.CreatePostRequest": {
             "type": "object",
+            "required": [
+                "content",
+                "post_type"
+            ],
             "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "INVALID_REQUEST"
+                "car_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
-                "message": {
+                "content": {
                     "type": "string",
-                    "example": "Authorization code is required"
+                    "maxLength": 500,
+                    "minLength": 1
                 },
-                "request_id": {
-                    "type": "string",
-                    "example": "req_8n3mN9pQ2x"
+                "hashtags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
-                "timestamp": {
+                "location": {
                     "type": "string",
-                    "example": "2023-12-01T10:30:00Z"
+                    "maxLength": 100
+                },
+                "media_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post_type": {
+                    "enum": [
+                        "question",
+                        "tip",
+                        "show_off",
+                        "general"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.PostType"
+                        }
+                    ]
                 }
             }
         },
-        "models.BadRequestErrorResponse": {
+        "dto.GarageResponse": {
             "type": "object",
             "properties": {
-                "error": {
-                    "$ref": "#/definitions/models.BadRequestErrorDetail"
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
-        "models.ErrorDetail": {
+        "dto.GaragesResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "VALIDATION_FAILED"
+                "garages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GarageResponse"
+                    }
                 },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": {}
+                "has_next": {
+                    "type": "boolean"
                 },
-                "message": {
-                    "type": "string",
-                    "example": "The request contains 2 validation errors"
+                "limit": {
+                    "type": "integer"
                 },
-                "request_id": {
-                    "type": "string",
-                    "example": "req_8n3mN9pQ2x"
+                "page": {
+                    "type": "integer"
                 },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2023-12-01T10:30:00Z"
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
-        "models.ErrorResponse": {
+        "dto.PostResponse": {
             "type": "object",
             "properties": {
-                "error": {
-                    "$ref": "#/definitions/models.ErrorDetail"
+                "car_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "hashtags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "media_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post_type": {
+                    "$ref": "#/definitions/domain.PostType"
+                },
+                "reply_count": {
+                    "type": "integer"
+                },
+                "repost_count": {
+                    "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.UserResponse"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "view_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PostsResponse": {
+            "type": "object",
+            "properties": {
+                "has_next": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PostResponse"
+                    }
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "email": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "dto.UpdatePostRequest": {
+            "type": "object",
+            "properties": {
+                "car_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "content": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                },
+                "hashtags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
+        "dto.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "location": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "follower_count": {
+                    "type": "integer"
+                },
+                "following_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "reputation": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }

@@ -3,8 +3,8 @@ package database
 import (
 	"fmt"
 
-	"github.com/topboyasante/pitstop/internal/config"
-	"github.com/topboyasante/pitstop/internal/logger"
+	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/core/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

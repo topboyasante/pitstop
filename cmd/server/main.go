@@ -11,11 +11,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
-	"github.com/topboyasante/pitstop/internal/api/v1/routes"
-	"github.com/topboyasante/pitstop/internal/config"
-	"github.com/topboyasante/pitstop/internal/database"
-	"github.com/topboyasante/pitstop/internal/logger"
-	"github.com/topboyasante/pitstop/internal/middleware"
+	"github.com/topboyasante/pitstop/internal/modules/auth"
+	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/core/database"
+	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/middleware"
 	"github.com/topboyasante/pitstop/internal/provider"
 	_ "github.com/topboyasante/pitstop/docs/v1"
 )
@@ -38,7 +38,7 @@ func main() {
 	validator := validator.New()
 
 	// Initialize provider with dependency injection
-	provider := provider.NewProvider(db, validator, config)
+	provider := provider.NewProvider(db, config, validator)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler(),
@@ -55,8 +55,9 @@ func main() {
 	}))
 
 	v1 := app.Group("/api/v1")
-	routes.RegisterV1PostRoutes(v1, provider)
-	routes.RegisterV1AuthRoutes(v1, provider)
+	
+	// Register modular routes
+	auth.RegisterRoutes(v1, provider.AuthHandler)
 
 	if err := app.Listen(":" + config.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)

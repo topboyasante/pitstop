@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"context"
@@ -6,38 +6,44 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/topboyasante/pitstop/internal/config"
-	"github.com/topboyasante/pitstop/internal/logger"
+	"github.com/go-playground/validator/v10"
+	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/modules/auth/repository"
 )
 
 type AuthService struct {
-	config *config.Config
-	states map[string]bool // In production, use Redis or database
+	config    *config.Config
+	userRepo  *repository.UserRepository
+	validator *validator.Validate
+	states    map[string]bool // In production, use Redis or database
 }
 
 // NewAuthService creates a new instance of AuthService with the provided configuration
-func NewAuthService(config *config.Config) *AuthService {
+func NewAuthService(config *config.Config, userRepo *repository.UserRepository, validator *validator.Validate) *AuthService {
 	logger.Info("Initializing auth service")
 	return &AuthService{
-		config: config,
-		states: make(map[string]bool),
+		config:    config,
+		userRepo:  userRepo,
+		validator: validator,
+		states:    make(map[string]bool),
 	}
 }
 
 // Authenticate generates a CSRF state token and returns the OAuth authorization URL
 func (as *AuthService) Authenticate() string {
-	logger.Info("OAuth authentication initiated", 
+	logger.Info("OAuth authentication initiated",
 		"event", "auth.oauth_started",
 		"provider", "google")
-	
+
 	state := as.generateState()
 	as.states[state] = true
 	url := as.config.OAuth.AuthCodeURL(state)
-	
-	logger.Info("OAuth URL generated", 
+
+	logger.Info("OAuth URL generated",
 		"event", "auth.oauth_url_generated",
 		"provider", "google")
-	
+
 	return url
 }
 
@@ -52,11 +58,11 @@ func (as *AuthService) generateState() string {
 func (as *AuthService) ValidateState(state string) bool {
 	if as.states[state] {
 		delete(as.states, state) // Use once
-		logger.Info("State validation successful", 
+		logger.Info("State validation successful",
 			"event", "auth.state_validated")
 		return true
 	}
-	logger.Warn("State validation failed", 
+	logger.Warn("State validation failed",
 		"event", "auth.state_validation_failed",
 		"reason", "invalid_state")
 	return false
@@ -64,11 +70,11 @@ func (as *AuthService) ValidateState(state string) bool {
 
 // ExchangeCode validates the state token and exchanges the authorization code for an access token
 func (as *AuthService) ExchangeCode(code, state string) (string, error) {
-	logger.Info("Token exchange initiated", 
+	logger.Info("Token exchange initiated",
 		"event", "auth.token_exchange_started")
-	
+
 	if !as.ValidateState(state) {
-		logger.Error("Token exchange failed", 
+		logger.Error("Token exchange failed",
 			"event", "auth.token_exchange_failed",
 			"reason", "invalid_state")
 		return "", fmt.Errorf("invalid state")
@@ -76,14 +82,14 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 
 	token, err := as.config.OAuth.Exchange(context.TODO(), code)
 	if err != nil {
-		logger.Error("Token exchange failed", 
+		logger.Error("Token exchange failed",
 			"event", "auth.token_exchange_failed",
 			"reason", "oauth_exchange_error",
 			"error", err.Error())
 		return "", fmt.Errorf("failed to exchange code: %w", err)
 	}
 
-	logger.Info("Token exchange successful", 
+	logger.Info("Token exchange successful",
 		"event", "auth.token_exchange_completed",
 		"token_type", token.TokenType)
 
