@@ -13,6 +13,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	OAuth    oauth2.Config
+	Redis    RedisConfig
 }
 
 // Server configuration structure
@@ -28,6 +29,10 @@ type DatabaseConfig struct {
 	Password       string
 	SslMode        string
 	ChannelBinding string
+}
+
+type RedisConfig struct {
+	URL string
 }
 
 // getEnvWithDefault retrieves an environment variable or returns a default value if not set.
@@ -63,6 +68,7 @@ func New() (*Config, error) {
 	oauthClientID := getEnv("OAUTH_CLIENT_ID", "")
 	oauthClientSecret := getEnv("OAUTH_CLIENT_SECRET", "")
 	oauthRedirectURI := getEnv("OAUTH_REDIRECT_URI", "")
+	redisURL := getEnv("REDIS_URL", "redis://localhost:6379")
 
 	logger.Info("Configuration loaded successfully",
 		"server_port", port,
@@ -89,6 +95,9 @@ func New() (*Config, error) {
 				AuthURL:  "https://accounts.google.com/o/oauth2/auth",
 				TokenURL: "https://oauth2.googleapis.com/token",
 			},
+		},
+		Redis: RedisConfig{
+			URL: redisURL,
 		},
 	}, nil
 }

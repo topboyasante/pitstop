@@ -2,10 +2,11 @@ package provider
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
+	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
 	"github.com/topboyasante/pitstop/internal/modules/auth/repository"
 	"github.com/topboyasante/pitstop/internal/modules/auth/service"
-	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/shared/events"
 	"gorm.io/gorm"
 )
@@ -13,7 +14,8 @@ import (
 // Provider is the central dependency injection container for the modular monolith
 type Provider struct {
 	// Database
-	DB *gorm.DB
+	DB    *gorm.DB
+	Redis *redis.Client
 
 	// Shared services
 	Config    *config.Config
@@ -29,7 +31,7 @@ type Provider struct {
 }
 
 // NewProvider creates and initializes the dependency injection container
-func NewProvider(db *gorm.DB, cfg *config.Config, validator *validator.Validate) *Provider {
+func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator *validator.Validate) *Provider {
 	// Initialize event bus
 	eventBus := events.NewEventBus()
 
@@ -43,6 +45,7 @@ func NewProvider(db *gorm.DB, cfg *config.Config, validator *validator.Validate)
 
 	return &Provider{
 		DB:        db,
+		Redis:     redis,
 		Config:    cfg,
 		Validator: validator,
 		EventBus:  eventBus,
@@ -57,10 +60,9 @@ func NewProvider(db *gorm.DB, cfg *config.Config, validator *validator.Validate)
 // setupEventSubscribers configures cross-module event handlers
 func setupEventSubscribers(eventBus *events.EventBus, authService *service.AuthService) {
 	// Example: When a user registers, other modules can react
-	events.SubscribeToEvent(&events.UserRegistered{}, func(event events.Event) error {
-		_ = event.(*events.UserRegistered)
+	eventBus.Subscribe("UserRegistered", func(event events.Event) {
+		userEvent := event.(*events.UserRegistered)
+		_ = userEvent
 		// Could trigger welcome email, create default garage, etc.
-		// For now, just log
-		return nil
 	})
 }

@@ -11,13 +11,14 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
-	"github.com/topboyasante/pitstop/internal/modules/auth"
+	_ "github.com/topboyasante/pitstop/docs/v1"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/database"
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	"github.com/topboyasante/pitstop/internal/core/middleware"
+	"github.com/topboyasante/pitstop/internal/core/redis"
+	"github.com/topboyasante/pitstop/internal/modules/auth"
 	"github.com/topboyasante/pitstop/internal/provider"
-	_ "github.com/topboyasante/pitstop/docs/v1"
 )
 
 func main() {
@@ -34,11 +35,24 @@ func main() {
 		log.Panicf("error: %s", err)
 	}
 
+	redisClient, err := redis.Connect(config)
+	if err != nil {
+		logger.Fatal("Failed to connect to Redis", "error", err)
+		log.Panicf("error: %s", err)
+	}
+
+	// Ensure Redis connection is closed on application exit
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.Error("error closing redis connection: %v", err)
+		}
+	}()
+
 	// Initialize validator
 	validator := validator.New()
 
 	// Initialize provider with dependency injection
-	provider := provider.NewProvider(db, config, validator)
+	provider := provider.NewProvider(db, redisClient, config, validator)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler(),
@@ -55,7 +69,7 @@ func main() {
 	}))
 
 	v1 := app.Group("/api/v1")
-	
+
 	// Register modular routes
 	auth.RegisterRoutes(v1, provider.AuthHandler)
 
