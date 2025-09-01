@@ -34,7 +34,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	eventBus := events.NewEventBus()
 
 	// Initialize Auth module
-	authService := service.NewAuthService(cfg, validator)
+	authService := service.NewAuthService(cfg, redis, validator)
 	authHandler := handler.NewAuthHandler(authService)
 
 	// Set up event subscribers

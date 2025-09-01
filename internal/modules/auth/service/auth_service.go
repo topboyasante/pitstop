@@ -6,24 +6,27 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"time"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
 )
 
 type AuthService struct {
 	config    *config.Config
+	redis     *redis.Client
 	validator *validator.Validate
-	states    map[string]bool // In production, use Redis or database
 }
 
 // NewAuthService creates a new instance of AuthService with the provided configuration
-func NewAuthService(config *config.Config, validator *validator.Validate) *AuthService {
+func NewAuthService(config *config.Config, redis *redis.Client, validator *validator.Validate) *AuthService {
 	logger.Info("Initializing auth service")
 	return &AuthService{
 		config:    config,
+		redis:     redis,
 		validator: validator,
-		states:    make(map[string]bool),
 	}
 }
 
@@ -34,12 +37,33 @@ func (as *AuthService) Authenticate() string {
 		"provider", "google")
 
 	state := as.generateState()
-	as.states[state] = true
+
+	// Store state in Redis with 10 minute expiration
+	key := fmt.Sprintf("oauth:state:%s", state)
+	err := as.redis.Set(context.Background(), key, "1", 10*time.Minute).Err()
+	if err != nil {
+		logger.Error("Failed to store OAuth state in Redis",
+			"event", "auth.state_store_failed",
+			"provider", "google",
+			"operation", "redis_set",
+			"ttl_minutes", 10,
+			"error", err)
+		// Continue anyway - could fall back to in-memory if needed
+	} else {
+		logger.Info("OAuth state stored successfully",
+			"event", "auth.state_stored",
+			"provider", "google",
+			"operation", "redis_set",
+			"ttl_minutes", 10)
+	}
+
 	url := as.config.OAuth.AuthCodeURL(state)
 
 	logger.Info("OAuth URL generated",
 		"event", "auth.oauth_url_generated",
-		"provider", "google")
+		"provider", "google",
+		"redirect_host", "accounts.google.com",
+		"state_stored", err == nil)
 
 	return url
 }
@@ -53,16 +77,38 @@ func (as *AuthService) generateState() string {
 
 // ValidateState verifies the CSRF state token and removes it to prevent reuse
 func (as *AuthService) ValidateState(state string) bool {
-	if as.states[state] {
-		delete(as.states, state) // Use once
-		logger.Info("State validation successful",
-			"event", "auth.state_validated")
-		return true
+	key := fmt.Sprintf("oauth:state:%s", state)
+
+	// Check if state exists in Redis
+	exists, err := as.redis.Get(context.Background(), key).Result()
+	if err != nil || exists == "" {
+		logger.Warn("State validation failed",
+			"event", "auth.state_validation_failed",
+			"provider", "google",
+			"operation", "redis_get",
+			"reason", "state_not_found_or_expired",
+			"redis_error", err != nil,
+			"error", err)
+		return false
 	}
-	logger.Warn("State validation failed",
-		"event", "auth.state_validation_failed",
-		"reason", "invalid_state")
-	return false
+
+	// Delete the state immediately (one-time use)
+	err = as.redis.Del(context.Background(), key).Err()
+	if err != nil {
+		logger.Error("Failed to delete OAuth state from Redis",
+			"event", "auth.state_delete_failed",
+			"provider", "google",
+			"operation", "redis_del",
+			"error", err)
+		// Continue anyway - state was valid
+	}
+
+	logger.Info("State validation successful",
+		"event", "auth.state_validated",
+		"provider", "google",
+		"operation", "redis_del",
+		"state_deleted", err == nil)
+	return true
 }
 
 // ExchangeCode validates the state token and exchanges the authorization code for an access token
