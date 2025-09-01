@@ -31,12 +31,13 @@ func (e BaseEvent) EventData() any {
 // User Events
 type UserRegistered struct {
 	BaseEvent
-	UserID   uint   `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
+	Provider string `json:"provider"`
 }
 
-func NewUserRegistered(userID uint, email, username string) *UserRegistered {
+func NewUserRegistered(userID string, email, username string) *UserRegistered {
 	return &UserRegistered{
 		BaseEvent: BaseEvent{
 			Name:      "user.registered",
@@ -50,11 +51,11 @@ func NewUserRegistered(userID uint, email, username string) *UserRegistered {
 
 type UserProfileUpdated struct {
 	BaseEvent
-	UserID   uint   `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 }
 
-func NewUserProfileUpdated(userID uint, username string) *UserProfileUpdated {
+func NewUserProfileUpdated(userID string, username string) *UserProfileUpdated {
 	return &UserProfileUpdated{
 		BaseEvent: BaseEvent{
 			Name:      "user.profile_updated",
