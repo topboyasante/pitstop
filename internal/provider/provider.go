@@ -5,7 +5,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
-	"github.com/topboyasante/pitstop/internal/modules/auth/repository"
 	"github.com/topboyasante/pitstop/internal/modules/auth/service"
 	"github.com/topboyasante/pitstop/internal/shared/events"
 	"gorm.io/gorm"
@@ -26,8 +25,7 @@ type Provider struct {
 	AuthHandler *handler.AuthHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
-	UserRepository *repository.UserRepository
-	AuthService    *service.AuthService
+	AuthService *service.AuthService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -36,8 +34,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	eventBus := events.NewEventBus()
 
 	// Initialize Auth module
-	userRepo := repository.NewUserRepository(db)
-	authService := service.NewAuthService(cfg, userRepo, validator)
+	authService := service.NewAuthService(cfg, validator)
 	authHandler := handler.NewAuthHandler(authService)
 
 	// Set up event subscribers
@@ -52,8 +49,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 
 		AuthHandler: authHandler,
 
-		UserRepository: userRepo,
-		AuthService:    authService,
+		AuthService: authService,
 	}
 }
 

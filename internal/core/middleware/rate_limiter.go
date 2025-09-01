@@ -46,7 +46,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 
 		// Define the rate limits
 		// This is a slice of arrays where each array contains:
-		// 1. A condition to check (e.g., if userID is not empty)
+		// 1. A condition to check (e.g., if userID is not empty). We use this to determine if we should apply this limit.
 		// 2. The Redis key pattern
 		// 3. The maximum allowed requests
 		// 4. A description for logging purposes

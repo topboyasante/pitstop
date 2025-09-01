@@ -9,22 +9,19 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
-	"github.com/topboyasante/pitstop/internal/modules/auth/repository"
 )
 
 type AuthService struct {
 	config    *config.Config
-	userRepo  *repository.UserRepository
 	validator *validator.Validate
 	states    map[string]bool // In production, use Redis or database
 }
 
 // NewAuthService creates a new instance of AuthService with the provided configuration
-func NewAuthService(config *config.Config, userRepo *repository.UserRepository, validator *validator.Validate) *AuthService {
+func NewAuthService(config *config.Config, validator *validator.Validate) *AuthService {
 	logger.Info("Initializing auth service")
 	return &AuthService{
 		config:    config,
-		userRepo:  userRepo,
 		validator: validator,
 		states:    make(map[string]bool),
 	}

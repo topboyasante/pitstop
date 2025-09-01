@@ -16,8 +16,7 @@ type Session struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// Relations
-	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	// Relations would go here when User model is added
 }
 
 // TableName specifies the table name for the Session model
