@@ -72,11 +72,11 @@ func (s *UserService) CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, 
 		"user_id", user.ID)
 
 	// Publish user created event
-	s.eventBus.Publish("UserRegistered", &events.UserRegistered{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Provider: user.Provider,
-	})
+	// s.eventBus.Publish("UserRegistered", &events.UserRegistered{
+	// 	UserID:   user.ID,
+	// 	Email:    user.Email,
+	// 	Provider: user.Provider,
+	// })
 
 	return s.mapUserToResponse(user), nil
 }

@@ -28,40 +28,34 @@ func (e BaseEvent) EventData() any {
 	return e.Data
 }
 
-// User Events
-type UserRegistered struct {
+// Auth Events
+type AuthenticationSuccessful struct {
 	BaseEvent
-	UserID   string `json:"user_id"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Provider string `json:"provider"`
+	Provider    string `json:"provider"`
+	ProviderID  string `json:"provider_id"`
+	AccessToken string `json:"access_token"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	AvatarURL   string `json:"avatar_url"`
+	Locale      string `json:"locale"`
 }
 
-func NewUserRegistered(userID string, email, username string) *UserRegistered {
-	return &UserRegistered{
+func NewAuthenticationSuccessful(provider,
+	providerID, accessToken, email, firstName, lastName,
+	avatarURL, locale string) *AuthenticationSuccessful {
+	return &AuthenticationSuccessful{
 		BaseEvent: BaseEvent{
-			Name:      "user.registered",
+			Name:      "oauth.authentication_successful",
 			Timestamp: time.Now(),
 		},
-		UserID:   userID,
-		Email:    email,
-		Username: username,
-	}
-}
-
-type UserProfileUpdated struct {
-	BaseEvent
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-}
-
-func NewUserProfileUpdated(userID string, username string) *UserProfileUpdated {
-	return &UserProfileUpdated{
-		BaseEvent: BaseEvent{
-			Name:      "user.profile_updated",
-			Timestamp: time.Now(),
-		},
-		UserID:   userID,
-		Username: username,
+		Provider:    provider,
+		ProviderID:  providerID,
+		AccessToken: accessToken,
+		Email:       email,
+		FirstName:   firstName,
+		LastName:    lastName,
+		AvatarURL:   avatarURL,
+		Locale:      locale,
 	}
 }

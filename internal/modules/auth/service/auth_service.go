@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"time"
 
@@ -12,21 +14,25 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/modules/user/dto"
+	"github.com/topboyasante/pitstop/internal/shared/events"
 )
 
 type AuthService struct {
 	config    *config.Config
 	redis     *redis.Client
 	validator *validator.Validate
+	eventBus  *events.EventBus
 }
 
 // NewAuthService creates a new instance of AuthService with the provided configuration
-func NewAuthService(config *config.Config, redis *redis.Client, validator *validator.Validate) *AuthService {
+func NewAuthService(config *config.Config, redis *redis.Client, eventBus *events.EventBus, validator *validator.Validate) *AuthService {
 	logger.Info("Initializing auth service")
 	return &AuthService{
 		config:    config,
 		redis:     redis,
 		validator: validator,
+		eventBus:  eventBus,
 	}
 }
 
@@ -132,9 +138,69 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 		return "", fmt.Errorf("failed to exchange code: %w", err)
 	}
 
+	profile, err := as.GetGoogleProfile(token.AccessToken)
+	if err != nil {
+		return "", err
+	}
+
+	event := events.NewAuthenticationSuccessful(
+		"google",
+		profile.ID,
+		token.AccessToken,
+		profile.Email,
+		profile.FirstName,
+		profile.LastName,
+		profile.Picture,
+		profile.Locale,
+	)
+
+	// Publish the event so that the user service, already subscribed would use it
+	as.eventBus.Publish("AuthenticationSuccessful", event)
+
 	logger.Info("Token exchange successful",
 		"event", "auth.token_exchange_completed",
 		"token_type", token.TokenType)
 
 	return token.AccessToken, nil
+}
+
+// GetGoogleProfile fetches user profile from Google using the access token
+func (as *AuthService) GetGoogleProfile(accessToken string) (*dto.GoogleOAuthProfile, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Failed to fetch Google profile",
+			"event", "auth.profile_fetch_failed",
+			"error", err)
+		return nil, fmt.Errorf("failed to fetch profile: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Google profile fetch returned non-200 status",
+			"event", "auth.profile_fetch_failed",
+			"status_code", resp.StatusCode)
+		return nil, fmt.Errorf("profile fetch failed with status: %d", resp.StatusCode)
+	}
+
+	var profile dto.GoogleOAuthProfile
+	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		logger.Error("Failed to decode Google profile response",
+			"event", "auth.profile_decode_failed",
+			"error", err)
+		return nil, fmt.Errorf("failed to decode profile: %w", err)
+	}
+
+	logger.Info("Google profile fetched successfully",
+		"event", "auth.profile_fetched",
+		"email", profile.Email)
+
+	return &profile, nil
 }

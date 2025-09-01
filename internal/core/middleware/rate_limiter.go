@@ -19,7 +19,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 			requestID = utils.GenerateRequestID()
 		}
 
-		//  Get the API Key from headers
+		//  Get the API Key from headers. we need to figure out how to use the rate limiter when we are not authorized (when signing up, etc.)
 		apiKey := c.Get("X-API-KEY")
 		if apiKey == "" {
 			logger.Error("Request failed with error",

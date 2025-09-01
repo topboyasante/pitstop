@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
@@ -34,7 +36,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	eventBus := events.NewEventBus()
 
 	// Initialize Auth module
-	authService := service.NewAuthService(cfg, redis, validator)
+	authService := service.NewAuthService(cfg, redis, eventBus, validator)
 	authHandler := handler.NewAuthHandler(authService)
 
 	// Set up event subscribers
@@ -55,10 +57,16 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 
 // setupEventSubscribers configures cross-module event handlers
 func setupEventSubscribers(eventBus *events.EventBus, authService *service.AuthService) {
-	// Example: When a user registers, other modules can react
-	eventBus.Subscribe("UserRegistered", func(event events.Event) {
-		userEvent := event.(*events.UserRegistered)
+	eventBus.Subscribe("AuthenticationSuccessful", func(event events.Event) {
+		userEvent := event.(*events.AuthenticationSuccessful)
 		_ = userEvent
-		// Could trigger welcome email, create default garage, etc.
+		fmt.Println("this occured becuase someone is subscribed to this")
 	})
+
+	// Example: When a user registers, other modules can react
+	// eventBus.Subscribe("UserRegistered", func(event events.Event) {
+	// 	userEvent := event.(*events.UserRegistered)
+	// 	_ = userEvent
+	// 	// Could trigger welcome email, create default garage, etc.
+	// })
 }
