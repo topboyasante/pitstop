@@ -30,7 +30,7 @@ func NewUserService(userRepo *repository.UserRepository, validator *validator.Va
 // CreateUser creates a user from OAuth provider data
 func (s *UserService) CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, error) {
 	if err := s.validator.Struct(req); err != nil {
-		logger.Error("OAuth user validation failed", 
+		logger.Error("OAuth user validation failed",
 			"event", "user.oauth_validation_failed",
 			"provider", req.Provider,
 			"error", err)
@@ -70,13 +70,6 @@ func (s *UserService) CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, 
 		"event", "user.oauth_created",
 		"provider", req.Provider,
 		"user_id", user.ID)
-
-	// Publish user created event
-	// s.eventBus.Publish("UserRegistered", &events.UserRegistered{
-	// 	UserID:   user.ID,
-	// 	Email:    user.Email,
-	// 	Provider: user.Provider,
-	// })
 
 	return s.mapUserToResponse(user), nil
 }

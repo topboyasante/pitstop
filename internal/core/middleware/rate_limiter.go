@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,14 @@ import (
 )
 
 func RateLimiter(redisClient *redis.Client) fiber.Handler {
+	// Define exempt routes that don't require API keys
+	exemptRoutes := []string{
+		"/api/v1/auth/google",
+		"/api/v1/docs",
+		"/health",
+		"/docs",
+	}
+
 	return func(c *fiber.Ctx) error {
 		// Generate or get request ID
 		requestID := c.Get("X-Request-ID")
@@ -19,13 +28,26 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 			requestID = utils.GenerateRequestID()
 		}
 
-		//  Get the API Key from headers. we need to figure out how to use the rate limiter when we are not authorized (when signing up, etc.)
+		path := c.Path()
+		
+		// Check if this route is exempt from API key requirements
+		isExempt := false
+		for _, exemptRoute := range exemptRoutes {
+			if strings.HasPrefix(path, exemptRoute) {
+				isExempt = true
+				break
+			}
+		}
+
+		// Get the API Key from headers
 		apiKey := c.Get("X-API-KEY")
-		if apiKey == "" {
+		
+		// If route is not exempt and no API key provided, return error
+		if !isExempt && apiKey == "" {
 			logger.Error("Request failed with error",
 				"event", "request.error",
 				"request_id", requestID,
-				"path", c.Path(),
+				"path", path,
 				"method", c.Method(),
 				"ip", c.IP(),
 				"user_agent", c.Get("User-Agent"),
@@ -44,18 +66,20 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 		hour := time.Now().Format("2006-01-02-15")
 		ctx := context.Background()
 
-		// Define the rate limits
-		// This is a slice of arrays where each array contains:
-		// 1. A condition to check (e.g., if userID is not empty). We use this to determine if we should apply this limit.
-		// 2. The Redis key pattern
-		// 3. The maximum allowed requests
-		// 4. A description for logging purposes
-		// The order of the limits matters: user-specific limits are checked first, then IP-based, then global.
-		// This ensures that more specific limits take precedence over broader ones.
-		limits := [][4]any{
-			{userID != "", fmt.Sprintf("rate_limit:%s:user:%s:%s", apiKey, userID, hour), 500, "rate limit by user"},
-			{true, fmt.Sprintf("rate_limit:%s:ip:%s:%s", apiKey, ip, hour), 1000, "rate limit by IP"},
-			{true, fmt.Sprintf("rate_limit:%s:global:%s", apiKey, hour), 10000, "rate limit by api key"},
+		var limits [][4]any
+
+		if isExempt {
+			// For exempt routes (auth, docs, health), apply IP-only rate limiting with stricter limits
+			limits = [][4]any{
+				{true, fmt.Sprintf("rate_limit:exempt:ip:%s:%s", ip, hour), 200, "exempt route rate limit by IP"},
+			}
+		} else {
+			// For API key protected routes, use the full multi-level rate limiting
+			limits = [][4]any{
+				{userID != "", fmt.Sprintf("rate_limit:%s:user:%s:%s", apiKey, userID, hour), 500, "rate limit by user"},
+				{true, fmt.Sprintf("rate_limit:%s:ip:%s:%s", apiKey, ip, hour), 1000, "rate limit by IP"},
+				{true, fmt.Sprintf("rate_limit:%s:global:%s", apiKey, hour), 10000, "rate limit by api key"},
+			}
 		}
 
 		// we don't need the index, so we comment it out

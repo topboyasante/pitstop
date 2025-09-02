@@ -1,13 +1,13 @@
 package provider
 
 import (
-	"fmt"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/core/logger"
 	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
-	"github.com/topboyasante/pitstop/internal/modules/auth/service"
+	authService "github.com/topboyasante/pitstop/internal/modules/auth/service"
+	userService "github.com/topboyasante/pitstop/internal/modules/user/service"
 	"github.com/topboyasante/pitstop/internal/shared/events"
 	"gorm.io/gorm"
 )
@@ -27,7 +27,8 @@ type Provider struct {
 	AuthHandler *handler.AuthHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
-	AuthService *service.AuthService
+	AuthService *authService.AuthService
+	UserService *userService.UserService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -36,7 +37,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	eventBus := events.NewEventBus()
 
 	// Initialize Auth module
-	authService := service.NewAuthService(cfg, redis, eventBus, validator)
+	authService := authService.NewAuthService(cfg, redis, eventBus, validator)
 	authHandler := handler.NewAuthHandler(authService)
 
 	// Set up event subscribers
@@ -56,11 +57,16 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 }
 
 // setupEventSubscribers configures cross-module event handlers
-func setupEventSubscribers(eventBus *events.EventBus, authService *service.AuthService) {
+func setupEventSubscribers(eventBus *events.EventBus, authService *authService.AuthService) {
 	eventBus.Subscribe("AuthenticationSuccessful", func(event events.Event) {
 		userEvent := event.(*events.AuthenticationSuccessful)
 		_ = userEvent
-		fmt.Println("this occured becuase someone is subscribed to this")
+		logger.Info("Recieved a pblished event",
+			"event", event)
+
+		// create a user record in the db if we have to
+		// Generate the neccessary tokens they need
+		//return the tokens to the client or sth
 	})
 
 	// Example: When a user registers, other modules can react

@@ -90,7 +90,7 @@ func New() (*Config, error) {
 			ClientID:     oauthClientID,
 			ClientSecret: oauthClientSecret,
 			RedirectURL:  oauthRedirectURI,
-			Scopes:       []string{"profile", "email"},
+			Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  "https://accounts.google.com/o/oauth2/auth",
 				TokenURL: "https://oauth2.googleapis.com/token",

@@ -146,7 +146,6 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 	event := events.NewAuthenticationSuccessful(
 		"google",
 		profile.ID,
-		token.AccessToken,
 		profile.Email,
 		profile.FirstName,
 		profile.LastName,
