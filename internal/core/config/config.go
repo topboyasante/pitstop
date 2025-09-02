@@ -18,7 +18,9 @@ type Config struct {
 
 // Server configuration structure
 type ServerConfig struct {
-	Port string
+	Port      string
+	JWTSecret string
+	JWTIssuer string
 }
 
 // Database configuration structure
@@ -69,6 +71,8 @@ func New() (*Config, error) {
 	oauthClientSecret := getEnv("OAUTH_CLIENT_SECRET", "")
 	oauthRedirectURI := getEnv("OAUTH_REDIRECT_URI", "")
 	redisURL := getEnv("REDIS_URL", "redis://localhost:6379")
+	jwtSecret := getEnv("JWT_SECRET", "dummy")
+	jwtIssuer := getEnv("JWT_ISSUER", "pitstop")
 
 	logger.Info("Configuration loaded successfully",
 		"server_port", port,
@@ -76,7 +80,9 @@ func New() (*Config, error) {
 
 	return &Config{
 		Server: ServerConfig{
-			Port: port,
+			Port:      port,
+			JWTSecret: jwtSecret,
+			JWTIssuer: jwtIssuer,
 		},
 		Database: DatabaseConfig{
 			Host:           dbHost,
