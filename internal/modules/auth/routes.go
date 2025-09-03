@@ -16,6 +16,7 @@ func RegisterRoutes(router fiber.Router, authHandler *handler.AuthHandler, confi
 	auth.Get("/google/callback", authHandler.GoogleCallback)
 	
 	// JWT token routes
+	auth.Post("/exchange", authHandler.ExchangeCode)
 	auth.Post("/refresh", authHandler.RefreshToken)
 	
 	// Protected routes (require JWT authentication)

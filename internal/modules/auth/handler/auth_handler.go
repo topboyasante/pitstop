@@ -37,13 +37,13 @@ func (h *AuthHandler) GoogleAuth(c *fiber.Ctx) error {
 
 // GoogleCallback handles Google OAuth callback
 // @Summary Handle Google OAuth callback
-// @Description Exchange authorization code for JWT tokens
+// @Description Returns authorization code for frontend to exchange
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param code query string true "Authorization code"
 // @Param state query string true "CSRF state token"
-// @Success 200 {object} dto.JWTTokenResponse
+// @Success 200 {object} dto.AuthCodeResponse
 // @Failure 400 {object} map[string]string
 // @Router /auth/google/callback [get]
 func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
@@ -56,15 +56,11 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	tokens, err := h.authService.ExchangeCode(code, state)
-	if err != nil {
-		logger.Error("OAuth callback failed", "error", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to exchange authorization code",
-		})
-	}
-
-	return c.JSON(tokens)
+	// Just return the code and state - let frontend exchange for tokens
+	return c.JSON(dto.AuthCodeResponse{
+		Code:  code,
+		State: state,
+	})
 }
 
 // RefreshToken handles token refresh requests
@@ -97,6 +93,41 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		logger.Error("Token refresh failed", "error", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Failed to refresh tokens",
+		})
+	}
+
+	return c.JSON(tokens)
+}
+
+// ExchangeCode handles authorization code to token exchange
+// @Summary Exchange authorization code for JWT tokens
+// @Description Exchange OAuth authorization code for JWT tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dto.ExchangeCodeRequest true "Code exchange request"
+// @Success 200 {object} dto.JWTTokenResponse
+// @Failure 400 {object} map[string]string
+// @Router /auth/exchange [post]
+func (h *AuthHandler) ExchangeCode(c *fiber.Ctx) error {
+	var req dto.ExchangeCodeRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	if req.Code == "" || req.State == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Code and state are required",
+		})
+	}
+
+	tokens, err := h.authService.ExchangeCode(req.Code, req.State)
+	if err != nil {
+		logger.Error("Code exchange failed", "error", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Failed to exchange authorization code",
 		})
 	}
 

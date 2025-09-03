@@ -39,3 +39,15 @@ type JWTTokenResponse struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
+
+// AuthCodeResponse represents the authorization code response
+type AuthCodeResponse struct {
+	Code  string `json:"code"`
+	State string `json:"state"`
+}
+
+// ExchangeCodeRequest represents a code-to-token exchange request
+type ExchangeCodeRequest struct {
+	Code  string `json:"code" validate:"required"`
+	State string `json:"state" validate:"required"`
+}
