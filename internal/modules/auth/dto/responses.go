@@ -26,3 +26,16 @@ type LoginResponse struct {
 type AuthURLResponse struct {
 	AuthURL string `json:"auth_url"`
 }
+
+// JWTTokenResponse represents a JWT token response
+type JWTTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresAt    int64  `json:"expires_at"`
+}
+
+// RefreshTokenRequest represents a refresh token request
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}

@@ -72,7 +72,7 @@ func main() {
 	v1 := app.Group("/api/v1")
 
 	// Register modular routes
-	auth.RegisterRoutes(v1, provider.AuthHandler)
+	auth.RegisterRoutes(v1, provider.AuthHandler, config)
 
 	if err := app.Listen(":" + config.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)

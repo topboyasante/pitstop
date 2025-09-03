@@ -7,32 +7,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	authdto "github.com/topboyasante/pitstop/internal/modules/auth/dto"
 	"github.com/topboyasante/pitstop/internal/modules/user/dto"
+	"github.com/topboyasante/pitstop/internal/modules/user/service"
 	"github.com/topboyasante/pitstop/internal/shared/events"
+	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
 type AuthService struct {
-	config    *config.Config
-	redis     *redis.Client
-	validator *validator.Validate
-	eventBus  *events.EventBus
+	config      *config.Config
+	redis       *redis.Client
+	validator   *validator.Validate
+	eventBus    *events.EventBus
+	userService *service.UserService
 }
 
 // NewAuthService creates a new instance of AuthService with the provided configuration
-func NewAuthService(config *config.Config, redis *redis.Client, eventBus *events.EventBus, validator *validator.Validate) *AuthService {
+func NewAuthService(config *config.Config, redis *redis.Client, eventBus *events.EventBus, validator *validator.Validate, userService *service.UserService) *AuthService {
 	logger.Info("Initializing auth service")
 	return &AuthService{
-		config:    config,
-		redis:     redis,
-		validator: validator,
-		eventBus:  eventBus,
+		config:      config,
+		redis:       redis,
+		validator:   validator,
+		eventBus:    eventBus,
+		userService: userService,
 	}
 }
 
@@ -117,8 +121,8 @@ func (as *AuthService) ValidateState(state string) bool {
 	return true
 }
 
-// ExchangeCode validates the state token and exchanges the authorization code for an access token
-func (as *AuthService) ExchangeCode(code, state string) (string, error) {
+// ExchangeCode validates the state token and exchanges the authorization code for JWT tokens
+func (as *AuthService) ExchangeCode(code, state string) (*authdto.JWTTokenResponse, error) {
 	logger.Info("Token exchange initiated",
 		"event", "auth.token_exchange_started")
 
@@ -126,7 +130,7 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 		logger.Error("Token exchange failed",
 			"event", "auth.token_exchange_failed",
 			"reason", "invalid_state")
-		return "", fmt.Errorf("invalid state")
+		return nil, fmt.Errorf("invalid state")
 	}
 
 	token, err := as.config.OAuth.Exchange(context.TODO(), code)
@@ -135,14 +139,53 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 			"event", "auth.token_exchange_failed",
 			"reason", "oauth_exchange_error",
 			"error", err.Error())
-		return "", fmt.Errorf("failed to exchange code: %w", err)
+		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
 
 	profile, err := as.GetGoogleProfile(token.AccessToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	// Create or get existing user synchronously
+	userReq := dto.CreateUserRequest{
+		Provider:   "google",
+		ProviderID: profile.ID,
+		FirstName:  profile.FirstName,
+		LastName:   profile.LastName,
+		Email:      profile.Email,
+		AvatarURL:  profile.Picture,
+		Locale:     profile.Locale,
+	}
+
+	user, err := as.userService.CreateUser(userReq)
+	if err != nil {
+		logger.Error("Failed to create/get user during OAuth",
+			"event", "auth.user_creation_failed",
+			"provider", "google",
+			"google_id", profile.ID,
+			"email", profile.Email,
+			"error", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	logger.Info("User created/retrieved for OAuth",
+		"event", "auth.user_ready",
+		"provider", "google",
+		"internal_user_id", user.ID,
+		"google_id", profile.ID)
+
+	// Generate JWT tokens using internal user ID
+	accessToken, refreshToken, expiresAt, err := utils.CreateJWTTokens(as.config, user.ID, "web")
+	if err != nil {
+		logger.Error("Failed to create JWT tokens",
+			"event", "auth.jwt_creation_failed",
+			"internal_user_id", user.ID,
+			"error", err)
+		return nil, fmt.Errorf("failed to create JWT tokens: %w", err)
+	}
+
+	// Publish event after successful user creation and JWT generation
 	event := events.NewAuthenticationSuccessful(
 		"google",
 		profile.ID,
@@ -152,15 +195,20 @@ func (as *AuthService) ExchangeCode(code, state string) (string, error) {
 		profile.Picture,
 		profile.Locale,
 	)
-
-	// Publish the event so that the user service, already subscribed would use it
 	as.eventBus.Publish("AuthenticationSuccessful", event)
 
 	logger.Info("Token exchange successful",
 		"event", "auth.token_exchange_completed",
-		"token_type", token.TokenType)
+		"internal_user_id", user.ID,
+		"google_id", profile.ID,
+		"expiresAt", expiresAt)
 
-	return token.AccessToken, nil
+	return &authdto.JWTTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresAt:    expiresAt,
+	}, nil
 }
 
 // GetGoogleProfile fetches user profile from Google using the access token
@@ -202,4 +250,29 @@ func (as *AuthService) GetGoogleProfile(accessToken string) (*dto.GoogleOAuthPro
 		"email", profile.Email)
 
 	return &profile, nil
+}
+
+// RefreshTokens validates the refresh token and creates new JWT tokens
+func (as *AuthService) RefreshTokens(refreshToken string) (*authdto.JWTTokenResponse, error) {
+	logger.Info("Token refresh initiated",
+		"event", "auth.token_refresh_started")
+
+	accessToken, newRefreshToken, expiresAt, err := utils.RefreshToken(as.config, refreshToken)
+	if err != nil {
+		logger.Error("Token refresh failed",
+			"event", "auth.token_refresh_failed",
+			"error", err)
+		return nil, fmt.Errorf("failed to refresh tokens: %w", err)
+	}
+
+	logger.Info("Token refresh successful",
+		"event", "auth.token_refresh_completed",
+		"expiresAt", expiresAt)
+
+	return &authdto.JWTTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		TokenType:    "Bearer",
+		ExpiresAt:    expiresAt,
+	}, nil
 }

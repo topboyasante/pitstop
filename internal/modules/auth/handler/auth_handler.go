@@ -37,13 +37,13 @@ func (h *AuthHandler) GoogleAuth(c *fiber.Ctx) error {
 
 // GoogleCallback handles Google OAuth callback
 // @Summary Handle Google OAuth callback
-// @Description Exchange authorization code for access token
+// @Description Exchange authorization code for JWT tokens
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param code query string true "Authorization code"
 // @Param state query string true "CSRF state token"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} dto.JWTTokenResponse
 // @Failure 400 {object} map[string]string
 // @Router /auth/google/callback [get]
 func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
@@ -56,7 +56,7 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := h.authService.ExchangeCode(code, state)
+	tokens, err := h.authService.ExchangeCode(code, state)
 	if err != nil {
 		logger.Error("OAuth callback failed", "error", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -64,7 +64,62 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
+	return c.JSON(tokens)
+}
+
+// RefreshToken handles token refresh requests
+// @Summary Refresh JWT tokens
+// @Description Generate new JWT tokens using refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RefreshTokenRequest true "Refresh token request"
+// @Success 200 {object} dto.JWTTokenResponse
+// @Failure 400 {object} map[string]string
+// @Router /auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
+	var req dto.RefreshTokenRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// Simple validation - refresh token is required
+	if req.RefreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Refresh token is required",
+		})
+	}
+
+	tokens, err := h.authService.RefreshTokens(req.RefreshToken)
+	if err != nil {
+		logger.Error("Token refresh failed", "error", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Failed to refresh tokens",
+		})
+	}
+
+	return c.JSON(tokens)
+}
+
+// Me returns the current authenticated user info from JWT token
+// @Summary Get current user
+// @Description Get current authenticated user information from JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/me [get]
+func (h *AuthHandler) Me(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	audience := c.Locals("audience").(string)
+
 	return c.JSON(fiber.Map{
-		"access_token": token,
+		"user_id":  userID,
+		"audience": audience,
+		"message":  "Authentication successful",
 	})
 }

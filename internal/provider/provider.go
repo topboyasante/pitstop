@@ -7,6 +7,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
 	authService "github.com/topboyasante/pitstop/internal/modules/auth/service"
+	userRepository "github.com/topboyasante/pitstop/internal/modules/user/repository"
 	userService "github.com/topboyasante/pitstop/internal/modules/user/service"
 	"github.com/topboyasante/pitstop/internal/shared/events"
 	"gorm.io/gorm"
@@ -36,8 +37,12 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	// Initialize event bus
 	eventBus := events.NewEventBus()
 
-	// Initialize Auth module
-	authService := authService.NewAuthService(cfg, redis, eventBus, validator)
+	// Initialize User module
+	userRepo := userRepository.NewUserRepository(db)
+	userService := userService.NewUserService(userRepo, validator, eventBus)
+
+	// Initialize Auth module (depends on user service)
+	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userService)
 	authHandler := handler.NewAuthHandler(authService)
 
 	// Set up event subscribers
@@ -53,6 +58,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		AuthHandler: authHandler,
 
 		AuthService: authService,
+		UserService: userService,
 	}
 }
 
