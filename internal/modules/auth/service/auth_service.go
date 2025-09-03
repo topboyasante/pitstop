@@ -185,7 +185,7 @@ func (as *AuthService) ExchangeCode(code, state string) (*authdto.JWTTokenRespon
 		return nil, fmt.Errorf("failed to create JWT tokens: %w", err)
 	}
 
-	// Publish event after successful user creation and JWT generation
+	// Publish event after successful user creation and JWT generation. The plan's to make sure that the email service would send an email if the user is a first time user or sth
 	event := events.NewAuthenticationSuccessful(
 		"google",
 		profile.ID,

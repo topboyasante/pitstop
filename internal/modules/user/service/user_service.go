@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	"github.com/topboyasante/pitstop/internal/modules/user/domain"
 	"github.com/topboyasante/pitstop/internal/modules/user/dto"
 	"github.com/topboyasante/pitstop/internal/modules/user/repository"
 	"github.com/topboyasante/pitstop/internal/shared/events"
+	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
 // UserService handles user business logic
@@ -49,6 +51,8 @@ func (s *UserService) CreateUser(req dto.CreateUserRequest) (*dto.UserResponse, 
 
 	// Create new user from OAuth data
 	user := &domain.User{
+		ID:         uuid.NewString(),
+		Username:   utils.GenerateRandomUsername(),
 		ProviderID: req.ProviderID,
 		Provider:   req.Provider,
 		FirstName:  req.FirstName,
@@ -115,6 +119,12 @@ func (s *UserService) UpdateUser(userID string, req dto.UpdateUserRequest) (*dto
 	if req.Username != "" {
 		user.Username = req.Username
 	}
+	if req.DisplayName != "" {
+		user.DisplayName = req.DisplayName
+	}
+	if req.Bio != "" {
+		user.Bio = req.Bio
+	}
 	if req.AvatarURL != "" {
 		user.AvatarURL = req.AvatarURL
 	}
@@ -167,15 +177,17 @@ func (s *UserService) GetAllUsers(page, limit int) (*dto.UsersResponse, error) {
 // mapUserToResponse converts domain User to UserResponse DTO
 func (s *UserService) mapUserToResponse(user *domain.User) *dto.UserResponse {
 	return &dto.UserResponse{
-		ID:        user.ID,
-		Provider:  user.Provider,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		AvatarURL: user.AvatarURL,
-		FullName:  user.FullName(),
-		IsOAuth:   user.IsOAuthUser(),
-		CreatedAt: user.CreatedAt,
+		ID:          user.ID,
+		Provider:    user.Provider,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Username:    user.Username,
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+		Bio:         user.Bio,
+		AvatarURL:   user.AvatarURL,
+		FullName:    user.FullName(),
+		IsOAuth:     user.IsOAuthUser(),
+		CreatedAt:   user.CreatedAt,
 	}
 }
