@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	"github.com/topboyasante/pitstop/internal/modules/auth/dto"
 	"github.com/topboyasante/pitstop/internal/modules/auth/service"
@@ -37,13 +40,11 @@ func (h *AuthHandler) GoogleAuth(c *fiber.Ctx) error {
 
 // GoogleCallback handles Google OAuth callback
 // @Summary Handle Google OAuth callback
-// @Description Returns authorization code for frontend to exchange
+// @Description Redirects to frontend with authorization code
 // @Tags auth
-// @Accept json
-// @Produce json
 // @Param code query string true "Authorization code"
 // @Param state query string true "CSRF state token"
-// @Success 200 {object} dto.AuthCodeResponse
+// @Success 302 "Redirect to frontend"
 // @Failure 400 {object} map[string]string
 // @Router /auth/google/callback [get]
 func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
@@ -51,16 +52,13 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 	state := c.Query("state")
 
 	if code == "" || state == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Missing code or state parameter",
-		})
+		// Redirect to frontend with error
+		return c.Redirect(config.Get().Server.FrontendURL + "/auth/error?error=missing_parameters")
 	}
 
-	// Just return the code and state - let frontend exchange for tokens
-	return c.JSON(dto.AuthCodeResponse{
-		Code:  code,
-		State: state,
-	})
+	// Redirect to frontend with code and state
+	redirectURL := fmt.Sprintf("%s/auth/callback?code=%s&state=%s", config.Get().Server.FrontendURL, code, state)
+	return c.Redirect(redirectURL)
 }
 
 // RefreshToken handles token refresh requests

@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterRoutes registers all auth-related routes
-func RegisterRoutes(router fiber.Router, authHandler *handler.AuthHandler, config *config.Config) {
+func RegisterRoutes(router fiber.Router, authHandler *handler.AuthHandler) {
 	auth := router.Group("/auth")
 
 	// OAuth routes
@@ -20,6 +20,6 @@ func RegisterRoutes(router fiber.Router, authHandler *handler.AuthHandler, confi
 	auth.Post("/refresh", authHandler.RefreshToken)
 	
 	// Protected routes (require JWT authentication)
-	protected := auth.Group("", middleware.JWTMiddleware(config))
+	protected := auth.Group("", middleware.JWTMiddleware(config.Get()))
 	protected.Get("/me", authHandler.Me)
 }

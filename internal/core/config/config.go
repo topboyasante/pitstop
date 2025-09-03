@@ -18,9 +18,10 @@ type Config struct {
 
 // Server configuration structure
 type ServerConfig struct {
-	Port      string
-	JWTSecret string
-	JWTIssuer string
+	Port        string
+	JWTSecret   string
+	JWTIssuer   string
+	FrontendURL string
 }
 
 // Database configuration structure
@@ -73,6 +74,7 @@ func New() (*Config, error) {
 	redisURL := getEnv("REDIS_URL", "redis://localhost:6379")
 	jwtSecret := getEnv("JWT_SECRET", "dummy")
 	jwtIssuer := getEnv("JWT_ISSUER", "pitstop")
+	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
 
 	logger.Info("Configuration loaded successfully",
 		"server_port", port,
@@ -80,9 +82,10 @@ func New() (*Config, error) {
 
 	return &Config{
 		Server: ServerConfig{
-			Port:      port,
-			JWTSecret: jwtSecret,
-			JWTIssuer: jwtIssuer,
+			Port:        port,
+			JWTSecret:   jwtSecret,
+			JWTIssuer:   jwtIssuer,
+			FrontendURL: frontendURL,
 		},
 		Database: DatabaseConfig{
 			Host:           dbHost,
@@ -106,4 +109,19 @@ func New() (*Config, error) {
 			URL: redisURL,
 		},
 	}, nil
+}
+
+// Global config instance
+var GlobalConfig *Config
+
+// InitGlobal initializes the global config instance
+func InitGlobal() error {
+	var err error
+	GlobalConfig, err = New()
+	return err
+}
+
+// Get returns the global config instance
+func Get() *Config {
+	return GlobalConfig
 }

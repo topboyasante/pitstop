@@ -24,18 +24,19 @@ import (
 func main() {
 	logger.InitGlobal()
 
-	config, err := config.New()
+	err := config.InitGlobal()
 	if err != nil {
 		logger.Error("failed to start server - configuration error: %v", err)
 	}
+	cfg := config.Get()
 
-	db, err := database.Init(config)
+	db, err := database.Init(cfg)
 	if err != nil {
 		logger.Fatal("failed to connect to database: %v", err)
 		log.Panicf("error: %s", err)
 	}
 
-	redisClient, err := redis.Connect(config)
+	redisClient, err := redis.Connect(cfg)
 	if err != nil {
 		logger.Fatal("Failed to connect to Redis", "error", err)
 		log.Panicf("error: %s", err)
@@ -52,7 +53,7 @@ func main() {
 	validator := validator.New()
 
 	// Initialize provider with dependency injection
-	provider := provider.NewProvider(db, redisClient, config, validator)
+	provider := provider.NewProvider(db, redisClient, cfg, validator)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler(),
@@ -72,9 +73,9 @@ func main() {
 	v1 := app.Group("/api/v1")
 
 	// Register modular routes
-	auth.RegisterRoutes(v1, provider.AuthHandler, config)
+	auth.RegisterRoutes(v1, provider.AuthHandler)
 
-	if err := app.Listen(":" + config.Server.Port); err != nil {
+	if err := app.Listen(":" + cfg.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)
 		log.Panicf("error: %s", err)
 	}
