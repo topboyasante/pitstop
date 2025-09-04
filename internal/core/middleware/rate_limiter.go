@@ -13,9 +13,12 @@ import (
 )
 
 func RateLimiter(redisClient *redis.Client) fiber.Handler {
-	// Define exempt routes that don't require API keys
-	exemptRoutes := []string{
+	// Define public routes that don't require JWT authentication
+	publicRoutes := []string{
 		"/api/v1/auth/google",
+		"/api/v1/auth/google/callback",
+		"/api/v1/auth/exchange",
+		"/api/v1/auth/refresh",
 		"/api/v1/docs",
 		"/health",
 		"/docs",
@@ -30,20 +33,25 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 
 		path := c.Path()
 		
-		// Check if this route is exempt from API key requirements
-		isExempt := false
-		for _, exemptRoute := range exemptRoutes {
-			if strings.HasPrefix(path, exemptRoute) {
-				isExempt = true
+		// Check if this is a public route
+		isPublic := false
+		for _, publicRoute := range publicRoutes {
+			if strings.HasPrefix(path, publicRoute) {
+				isPublic = true
 				break
 			}
 		}
 
-		// Get the API Key from headers
-		apiKey := c.Get("X-API-KEY")
-		
-		// If route is not exempt and no API key provided, return error
-		if !isExempt && apiKey == "" {
+		// Get user ID from JWT middleware (stored in Locals by auth middleware)
+		userID := ""
+		if userIDLocal := c.Locals("userID"); userIDLocal != nil {
+			if uid, ok := userIDLocal.(string); ok {
+				userID = uid
+			}
+		}
+
+		// For non-public routes, user must be authenticated
+		if !isPublic && userID == "" {
 			logger.Error("Request failed with error",
 				"event", "request.error",
 				"request_id", requestID,
@@ -51,16 +59,15 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 				"method", c.Method(),
 				"ip", c.IP(),
 				"user_agent", c.Get("User-Agent"),
-				"error", "API key is required")
+				"error", "Authentication required")
 
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "API key is required",
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authentication required",
 			})
 		}
-
-		// Get the IP and the User ID
+		
+		// Get IP address
 		ip := c.IP()
-		userID := c.Get("X-User-ID") //change how we get this later
 
 		// Current hour for Redis key
 		hour := time.Now().Format("2006-01-02-15")
@@ -68,17 +75,16 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 
 		var limits [][4]any
 
-		if isExempt {
-			// For exempt routes (auth, docs, health), apply IP-only rate limiting with stricter limits
+		if isPublic {
+			// For public routes, apply IP-only rate limiting
 			limits = [][4]any{
-				{true, fmt.Sprintf("rate_limit:exempt:ip:%s:%s", ip, hour), 200, "exempt route rate limit by IP"},
+				{true, fmt.Sprintf("rate_limit:public:ip:%s:%s", ip, hour), 100, "public route rate limit by IP"},
 			}
 		} else {
-			// For API key protected routes, use the full multi-level rate limiting
+			// For authenticated routes, apply user-based rate limiting
 			limits = [][4]any{
-				{userID != "", fmt.Sprintf("rate_limit:%s:user:%s:%s", apiKey, userID, hour), 500, "rate limit by user"},
-				{true, fmt.Sprintf("rate_limit:%s:ip:%s:%s", apiKey, ip, hour), 1000, "rate limit by IP"},
-				{true, fmt.Sprintf("rate_limit:%s:global:%s", apiKey, hour), 10000, "rate limit by api key"},
+				{true, fmt.Sprintf("rate_limit:auth:user:%s:%s", userID, hour), 1000, "authenticated rate limit by user"},
+				{true, fmt.Sprintf("rate_limit:auth:ip:%s:%s", ip, hour), 500, "authenticated rate limit by IP"},
 			}
 		}
 

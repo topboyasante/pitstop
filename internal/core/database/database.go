@@ -5,6 +5,7 @@ import (
 
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	postDomain "github.com/topboyasante/pitstop/internal/modules/post/domain"
 	userDomain "github.com/topboyasante/pitstop/internal/modules/user/domain"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -42,6 +43,7 @@ func runMigrations(db *gorm.DB) error {
 
 	err := db.AutoMigrate(
 		&userDomain.User{},
+		&postDomain.Post{},
 	)
 
 	if err != nil {

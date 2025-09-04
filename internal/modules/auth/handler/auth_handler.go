@@ -56,7 +56,7 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		return c.Redirect(config.Get().Server.FrontendURL + "/auth/error?error=missing_parameters")
 	}
 
-	// Redirect to frontend with code and state
+	// Redirect to frontend with code and state. The frontend will then hit a /exchange endpoint to retrieve the auth tokens
 	redirectURL := fmt.Sprintf("%s/auth/callback?code=%s&state=%s", config.Get().Server.FrontendURL, code, state)
 	return c.Redirect(redirectURL)
 }
