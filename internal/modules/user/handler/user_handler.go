@@ -29,7 +29,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Users per page" default(20)
-// @Success 200 {object} github.com/topboyasante/pitstop/internal/modules/user/dto.UsersResponse
+// @Success 200 {object} dto.UsersResponse
 // @Router /users [get]
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -52,8 +52,8 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param request body github.com/topboyasante/pitstop/internal/modules/user/dto.CreateUserRequest true "User details"
-// @Success 201 {object} github.com/topboyasante/pitstop/internal/modules/user/dto.UserResponse
+// @Param request body dto.CreateUserRequest true "User details"
+// @Success 201 {object} internal_modules_user_dto.UserResponse
 // @Failure 400 {object} map[string]string
 // @Router /users [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
@@ -83,7 +83,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} github.com/topboyasante/pitstop/internal/modules/user/dto.UserResponse
+// @Success 200 {object} internal_modules_user_dto.UserResponse
 // @Failure 404 {object} map[string]string
 // @Router /users/{id} [get]
 func (h *UserHandler) GetUser(c *fiber.Ctx) error {
