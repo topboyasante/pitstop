@@ -25,8 +25,12 @@ clean:
 	go clean
 
 # Build the application
-build:
+build: docs
 	go build -o build/pitstop cmd/server/main.go
+
+# Build for production (with optimizations)
+build-prod: docs
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o build/pitstop cmd/server/main.go
 
 # Run tests
 test:
@@ -61,6 +65,7 @@ help:
 	@echo "  start            - Generate docs and run the application"
 	@echo "  generate-module  - Generate a new module (requires name=<module-name>)"
 	@echo "  build            - Build the application"
+	@echo "  build-prod       - Build the application for production"
 	@echo "  test             - Run tests"
 	@echo "  test-coverage    - Run tests with coverage report"
 	@echo "  clean            - Clean build artifacts"
@@ -70,4 +75,4 @@ help:
 	@echo "  dev-setup        - Setup development environment"
 	@echo "  help             - Show this help message"
 
-.PHONY: docs run start generate-module build test test-coverage clean fmt lint tidy dev-setup help
+.PHONY: docs run start generate-module build build-prod test test-coverage clean fmt lint tidy dev-setup help

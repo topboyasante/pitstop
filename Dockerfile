@@ -4,7 +4,15 @@ FROM golang:${GO_VERSION}-bookworm as builder
 WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
+
+# Install swag for generating API documentation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 COPY . .
+
+# Generate swagger docs
+RUN swag init -g cmd/server/main.go -o docs/v1
+
 RUN go build -v -o /run-app ./cmd/server
 
 
