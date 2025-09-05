@@ -19,6 +19,7 @@ type Config struct {
 // Server configuration structure
 type ServerConfig struct {
 	Port        string
+	Host        string
 	JWTSecret   string
 	JWTIssuer   string
 	FrontendURL string
@@ -62,6 +63,7 @@ func New() (*Config, error) {
 	}
 
 	port := getEnv("PORT", "8080")
+	host := getEnv("HOST", "localhost")
 	dbHost := getEnv("PGHOST", "")
 	dbName := getEnv("PGDATABASE", "")
 	dbUser := getEnv("PGUSER", "")
@@ -83,6 +85,7 @@ func New() (*Config, error) {
 	return &Config{
 		Server: ServerConfig{
 			Port:        port,
+			Host:        host,
 			JWTSecret:   jwtSecret,
 			JWTIssuer:   jwtIssuer,
 			FrontendURL: frontendURL,

@@ -6,12 +6,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
-	_ "github.com/topboyasante/pitstop/docs/v1"
+	docs "github.com/topboyasante/pitstop/docs/v1"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/database"
 	"github.com/topboyasante/pitstop/internal/core/logger"
@@ -56,6 +57,9 @@ func main() {
 
 	// Initialize provider with dependency injection
 	provider := provider.NewProvider(db, redisClient, cfg, validator)
+
+	// Update Swagger host dynamically
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler(),
