@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/response"
 	"github.com/topboyasante/pitstop/internal/modules/auth/dto"
 	"github.com/topboyasante/pitstop/internal/modules/auth/service"
 )
@@ -28,14 +29,14 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Success 200 {object} dto.AuthURLResponse
+// @Success 200 {object} response.APIResponse
 // @Router /auth/google [get]
 func (h *AuthHandler) GoogleAuth(c *fiber.Ctx) error {
 	authURL := h.authService.Authenticate()
 
-	return c.JSON(dto.AuthURLResponse{
+	return response.SuccessJSON(c, dto.AuthURLResponse{
 		AuthURL: authURL,
-	})
+	}, "Google OAuth URL generated successfully")
 }
 
 // GoogleCallback handles Google OAuth callback
@@ -68,33 +69,27 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body dto.RefreshTokenRequest true "Refresh token request"
-// @Success 200 {object} dto.JWTTokenResponse
-// @Failure 400 {object} map[string]string
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req dto.RefreshTokenRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return response.ValidationErrorJSON(c, "Invalid request body", err.Error())
 	}
 
 	// Simple validation - refresh token is required
 	if req.RefreshToken == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Refresh token is required",
-		})
+		return response.ValidationErrorJSON(c, "Refresh token is required", "refresh_token field cannot be empty")
 	}
 
 	tokens, err := h.authService.RefreshTokens(req.RefreshToken)
 	if err != nil {
 		logger.Error("Token refresh failed", "error", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Failed to refresh tokens",
-		})
+		return response.ErrorJSON(c, fiber.StatusUnauthorized, "TOKEN_REFRESH_FAILED", "Failed to refresh tokens", err.Error())
 	}
 
-	return c.JSON(tokens)
+	return response.SuccessJSON(c, tokens, "Tokens refreshed successfully")
 }
 
 // ExchangeCode handles authorization code to token exchange
@@ -104,32 +99,26 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body dto.ExchangeCodeRequest true "Code exchange request"
-// @Success 200 {object} dto.JWTTokenResponse
-// @Failure 400 {object} map[string]string
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
 // @Router /auth/exchange [post]
 func (h *AuthHandler) ExchangeCode(c *fiber.Ctx) error {
 	var req dto.ExchangeCodeRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return response.ValidationErrorJSON(c, "Invalid request body", err.Error())
 	}
 
 	if req.Code == "" || req.State == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Code and state are required",
-		})
+		return response.ValidationErrorJSON(c, "Code and state are required", "Both 'code' and 'state' fields must be provided")
 	}
 
 	tokens, err := h.authService.ExchangeCode(req.Code, req.State)
 	if err != nil {
 		logger.Error("Code exchange failed", "error", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to exchange authorization code",
-		})
+		return response.ValidationErrorJSON(c, "Failed to exchange authorization code", err.Error())
 	}
 
-	return c.JSON(tokens)
+	return response.SuccessJSON(c, tokens, "Authorization code exchanged successfully")
 }
 
 // Me returns the current authenticated user info from JWT token
@@ -139,8 +128,8 @@ func (h *AuthHandler) ExchangeCode(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]string
-// @Failure 401 {object} map[string]string
+// @Success 200 {object} response.APIResponse
+// @Failure 401 {object} response.APIResponse
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
@@ -148,10 +137,8 @@ func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	// Get user from database via user service
 	user, err := h.authService.GetUserByID(userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
-		})
+		return response.NotFoundJSON(c, "User")
 	}
 
-	return c.JSON(user)
+	return response.SuccessJSON(c, user, "User information retrieved successfully")
 }

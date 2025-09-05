@@ -186,8 +186,6 @@ func (s *UserService) mapUserToResponse(user *domain.User) *dto.UserResponse {
 		DisplayName: user.DisplayName,
 		Bio:         user.Bio,
 		AvatarURL:   user.AvatarURL,
-		FullName:    user.FullName(),
-		IsOAuth:     user.IsOAuthUser(),
 		CreatedAt:   user.CreatedAt,
 	}
 }

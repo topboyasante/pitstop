@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/response"
 	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
@@ -17,18 +18,14 @@ func JWTMiddleware(config *config.Config) fiber.Handler {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			logger.Warn("Missing Authorization header")
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Missing authorization header",
-			})
+			return response.UnauthorizedJSON(c)
 		}
 
 		// Check for Bearer token format
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			logger.Warn("Invalid Authorization header format")
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid authorization header format",
-			})
+			return response.ErrorJSON(c, fiber.StatusUnauthorized, "INVALID_AUTH_FORMAT", "Invalid authorization header format", "Expected format: Bearer <token>")
 		}
 
 		tokenString := tokenParts[1]
@@ -37,18 +34,14 @@ func JWTMiddleware(config *config.Config) fiber.Handler {
 		token, err := utils.ValidateJWTToken(config, tokenString)
 		if err != nil {
 			logger.Error("JWT token validation failed", "error", err)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid or expired token",
-			})
+			return response.ErrorJSON(c, fiber.StatusUnauthorized, "INVALID_TOKEN", "Invalid or expired token", err.Error())
 		}
 
 		// Extract claims
 		userID, audience, _, err := utils.ExtractClaims(token)
 		if err != nil {
 			logger.Error("Failed to extract JWT claims", "error", err)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid token claims",
-			})
+			return response.ErrorJSON(c, fiber.StatusUnauthorized, "INVALID_CLAIMS", "Invalid token claims", err.Error())
 		}
 
 		// Store user info in context for route handlers

@@ -43,16 +43,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.JWTTokenResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -75,7 +72,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AuthURLResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -142,19 +139,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -188,16 +179,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.JWTTokenResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -236,7 +224,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostsResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -268,16 +256,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -309,16 +294,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -357,7 +339,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UsersResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -389,16 +371,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_dto.UserResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -430,16 +409,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_dto.UserResponse"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -447,14 +423,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.AuthURLResponse": {
-            "type": "object",
-            "properties": {
-                "auth_url": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.CreatePostRequest": {
             "type": "object",
             "required": [
@@ -526,66 +494,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.JWTTokenResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_at": {
-                    "type": "integer"
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PostResponse": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PostsResponse": {
-            "type": "object",
-            "properties": {
-                "has_next": {
-                    "type": "boolean"
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "posts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.PostResponse"
-                    }
-                },
-                "total_count": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.RefreshTokenRequest": {
             "type": "object",
             "required": [
@@ -597,10 +505,48 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UsersResponse": {
+        "response.APIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "$ref": "#/definitions/response.ErrorInfo"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/response.MetaInfo"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ErrorInfo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.MetaInfo": {
             "type": "object",
             "properties": {
                 "has_next": {
+                    "type": "boolean"
+                },
+                "has_prev": {
                     "type": "boolean"
                 },
                 "limit": {
@@ -609,55 +555,11 @@ const docTemplate = `{
                 "page": {
                     "type": "integer"
                 },
-                "total_count": {
+                "total": {
                     "type": "integer"
                 },
-                "users": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_modules_user_dto.UserResponse"
-                    }
-                }
-            }
-        },
-        "internal_modules_user_dto.UserResponse": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "bio": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_oauth": {
-                    "type": "boolean"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         }

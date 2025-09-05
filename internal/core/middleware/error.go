@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/response"
 	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
@@ -27,13 +28,10 @@ func ErrorHandler() fiber.ErrorHandler {
 
 		// Check if it's a Fiber error
 		if e, ok := err.(*fiber.Error); ok {
-			return utils.SendErrorResponse(c, 
-				utils.ErrCodeInternalError, 
-				e.Message, 
-				requestID)
+			return response.ErrorJSON(c, e.Code, "FIBER_ERROR", e.Message, requestID)
 		}
 
 		// Default internal server error
-		return utils.SendInternalError(c, requestID)
+		return response.InternalErrorJSON(c, "Request ID: "+requestID)
 	}
 }

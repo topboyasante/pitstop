@@ -34,8 +34,6 @@ type UserResponse struct {
 	DisplayName string    `json:"display_name,omitempty"`
 	Bio         string    `json:"bio,omitempty"`
 	AvatarURL   string    `json:"avatar_url,omitempty"`
-	FullName    string    `json:"full_name"`
-	IsOAuth     bool      `json:"is_oauth"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

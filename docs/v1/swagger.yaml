@@ -1,10 +1,5 @@
 basePath: /api/v1
 definitions:
-  dto.AuthURLResponse:
-    properties:
-      auth_url:
-        type: string
-    type: object
   dto.CreatePostRequest:
     properties:
       content:
@@ -55,45 +50,6 @@ definitions:
     - code
     - state
     type: object
-  dto.JWTTokenResponse:
-    properties:
-      access_token:
-        type: string
-      expires_at:
-        type: integer
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-    type: object
-  dto.PostResponse:
-    properties:
-      content:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: integer
-      updated_at:
-        type: string
-      user_id:
-        type: string
-    type: object
-  dto.PostsResponse:
-    properties:
-      has_next:
-        type: boolean
-      limit:
-        type: integer
-      page:
-        type: integer
-      posts:
-        items:
-          $ref: '#/definitions/dto.PostResponse'
-        type: array
-      total_count:
-        type: integer
-    type: object
   dto.RefreshTokenRequest:
     properties:
       refresh_token:
@@ -101,47 +57,43 @@ definitions:
     required:
     - refresh_token
     type: object
-  dto.UsersResponse:
+  response.APIResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/response.MetaInfo'
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      message:
+        type: string
+    type: object
+  response.MetaInfo:
     properties:
       has_next:
+        type: boolean
+      has_prev:
         type: boolean
       limit:
         type: integer
       page:
         type: integer
-      total_count:
+      total:
         type: integer
-      users:
-        items:
-          $ref: '#/definitions/internal_modules_user_dto.UserResponse'
-        type: array
-    type: object
-  internal_modules_user_dto.UserResponse:
-    properties:
-      avatar_url:
-        type: string
-      bio:
-        type: string
-      created_at:
-        type: string
-      display_name:
-        type: string
-      email:
-        type: string
-      first_name:
-        type: string
-      full_name:
-        type: string
-      id:
-        type: string
-      is_oauth:
-        type: boolean
-      last_name:
-        type: string
-      provider:
-        type: string
-      username:
-        type: string
+      total_pages:
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -168,13 +120,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.JWTTokenResponse'
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Exchange authorization code for JWT tokens
       tags:
       - auth
@@ -189,7 +139,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.AuthURLResponse'
+            $ref: '#/definitions/response.APIResponse'
       summary: Initiate Google OAuth
       tags:
       - auth
@@ -230,15 +180,11 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -262,13 +208,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.JWTTokenResponse'
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Refresh JWT tokens
       tags:
       - auth
@@ -294,7 +238,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PostsResponse'
+            $ref: '#/definitions/response.APIResponse'
       summary: Get all posts
       tags:
       - posts
@@ -315,13 +259,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.PostResponse'
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Create a new post
       tags:
       - posts
@@ -342,13 +284,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PostResponse'
+            $ref: '#/definitions/response.APIResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Get a post by ID
       tags:
       - posts
@@ -374,7 +314,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UsersResponse'
+            $ref: '#/definitions/response.APIResponse'
       summary: Get all users
       tags:
       - users
@@ -395,13 +335,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_user_dto.UserResponse'
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Create a new user
       tags:
       - users
@@ -422,13 +360,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_dto.UserResponse'
+            $ref: '#/definitions/response.APIResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       summary: Get a user by ID
       tags:
       - users

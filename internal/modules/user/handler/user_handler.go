@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/response"
 	"github.com/topboyasante/pitstop/internal/modules/user/dto"
 	"github.com/topboyasante/pitstop/internal/modules/user/service"
 )
@@ -29,7 +30,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Users per page" default(20)
-// @Success 200 {object} dto.UsersResponse
+// @Success 200 {object} response.APIResponse
 // @Router /users [get]
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -38,12 +39,18 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	users, err := h.userService.GetAllUsers(page, limit)
 	if err != nil {
 		logger.Error("Failed to retrieve users", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve users",
-		})
+		return response.InternalErrorJSON(c, "Failed to retrieve users")
 	}
 
-	return c.JSON(users)
+	// Create pagination metadata
+	meta := &response.MetaInfo{
+		Page:    users.Page,
+		Limit:   users.Limit,
+		Total:   users.TotalCount,
+		HasNext: users.HasNext,
+	}
+
+	return response.SuccessJSONWithMeta(c, users.Users, "Users retrieved successfully", meta)
 }
 
 // CreateUser creates a new user
@@ -53,27 +60,23 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body dto.CreateUserRequest true "User details"
-// @Success 201 {object} internal_modules_user_dto.UserResponse
-// @Failure 400 {object} map[string]string
+// @Success 201 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
 // @Router /users [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return response.ValidationErrorJSON(c, "Invalid request body", err.Error())
 	}
 
 	user, err := h.userService.CreateUser(req)
 	if err != nil {
 		logger.Error("Failed to create user", "error", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return response.ValidationErrorJSON(c, "Failed to create user", err.Error())
 	}
 
 	logger.Info("User created successfully", "user_id", user.ID)
-	return c.Status(fiber.StatusCreated).JSON(user)
+	return response.CreatedJSON(c, user, "User created successfully")
 }
 
 // GetUser retrieves a specific user by ID
@@ -83,18 +86,16 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} internal_modules_user_dto.UserResponse
-// @Failure 404 {object} map[string]string
+// @Success 200 {object} response.APIResponse
+// @Failure 404 {object} response.APIResponse
 // @Router /users/{id} [get]
 func (h *UserHandler) GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	user, err := h.userService.GetUserByID(id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
-		})
+		return response.NotFoundJSON(c, "User")
 	}
 
-	return c.JSON(user)
+	return response.SuccessJSON(c, user, "User retrieved successfully")
 }

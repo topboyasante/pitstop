@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/logger"
+	"github.com/topboyasante/pitstop/internal/core/response"
 	"github.com/topboyasante/pitstop/internal/shared/utils"
 )
 
@@ -96,9 +97,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 					"user_agent", c.Get("User-Agent"),
 					"error", err.Error())
 
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": "Internal server error",
-				})
+				return response.InternalErrorJSON(c, "Rate limiter Redis error: "+requestID)
 			}
 
 			// Set expiration for the key to 1 hour if it's newly created
@@ -113,9 +112,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 						"key", key,
 						"error", err.Error())
 
-					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-						"error": "Failed to set rate limit expiration",
-					})
+					return response.InternalErrorJSON(c, "Failed to set rate limit expiration: "+requestID)
 				}
 			}
 
@@ -142,9 +139,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 					"ip", c.IP(),
 					"user_agent", c.Get("User-Agent"))
 
-				return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-					"error": "Rate limit exceeded. Try again later.",
-				})
+				return response.ErrorJSON(c, fiber.StatusTooManyRequests, "RATE_LIMIT_EXCEEDED", "Rate limit exceeded. Try again later.", fmt.Sprintf("Request ID: %s", requestID))
 			}
 		}
 

@@ -29,12 +29,4 @@ func (User) TableName() string {
 	return "users"
 }
 
-// FullName returns the user's full name
-func (u *User) FullName() string {
-	return u.FirstName + " " + u.LastName
-}
 
-// IsOAuthUser checks if user was created via OAuth
-func (u *User) IsOAuthUser() bool {
-	return u.Provider != "" && u.ProviderID != ""
-}

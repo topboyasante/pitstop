@@ -6,6 +6,18 @@ This document explains how to integrate with the Pitstop backend authentication 
 
 The Pitstop API uses **Google OAuth2 authentication** with **JWT tokens** for session management. The authentication flow involves redirecting users to Google for login, then exchanging the authorization code for JWT tokens.
 
+All API responses follow a **structured format** for consistency:
+
+```json
+{
+  "success": true/false,
+  "message": "Human-readable message",
+  "data": { ... },           // Only present on success
+  "error": { ... },          // Only present on failure
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
 ## Authentication Flow
 
 ### 1. Initiate Authentication
@@ -20,7 +32,12 @@ GET /api/v1/auth/google
 **Response:**
 ```json
 {
-  "auth_url": "https://accounts.google.com/o/oauth2/auth?client_id=...&state=..."
+  "success": true,
+  "message": "Google OAuth URL generated successfully",
+  "data": {
+    "auth_url": "https://accounts.google.com/o/oauth2/auth?client_id=...&state=..."
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
@@ -30,10 +47,14 @@ GET /api/v1/auth/google
 const initiateAuth = async () => {
   try {
     const response = await fetch('/api/v1/auth/google');
-    const { auth_url } = await response.json();
+    const result = await response.json();
     
-    // Redirect user to Google OAuth
-    window.location.href = auth_url;
+    if (result.success) {
+      // Redirect user to Google OAuth
+      window.location.href = result.data.auth_url;
+    } else {
+      console.error('Auth initiation failed:', result.error?.message);
+    }
   } catch (error) {
     console.error('Failed to initiate authentication:', error);
   }
@@ -82,20 +103,15 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-  "expires_in": 1800,
-  "user": {
-    "id": "user-uuid",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "username": "john_doe_123",
-    "display_name": "John Doe",
-    "avatar_url": "https://...",
-    "bio": "Software Developer",
-    "locale": "en"
-  }
+  "success": true,
+  "message": "Authorization code exchanged successfully",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+    "token_type": "Bearer",
+    "expires_at": 1640995200
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
@@ -111,20 +127,20 @@ const exchangeCodeForTokens = async (code, state) => {
       body: JSON.stringify({ code, state }),
     });
     
-    if (response.ok) {
-      const data = await response.json();
-      
+    const result = await response.json();
+    
+    if (result.success) {
       // Store tokens securely
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
+      localStorage.setItem('access_token', result.data.access_token);
+      localStorage.setItem('refresh_token', result.data.refresh_token);
       
-      // Store user data
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Get user info and store it
+      await getCurrentUser();
       
       // Redirect to dashboard or home page
       window.location.href = '/dashboard';
     } else {
-      throw new Error('Token exchange failed');
+      throw new Error(result.error?.message || 'Token exchange failed');
     }
   } catch (error) {
     console.error('Token exchange error:', error);
@@ -213,9 +229,15 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-  "expires_in": 1800
+  "success": true,
+  "message": "Tokens refreshed successfully",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+    "token_type": "Bearer",
+    "expires_at": 1640997000
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
@@ -234,16 +256,17 @@ const refreshAccessToken = async () => {
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
     
-    if (response.ok) {
-      const data = await response.json();
-      
+    const result = await response.json();
+    
+    if (result.success) {
       // Update stored tokens
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
+      localStorage.setItem('access_token', result.data.access_token);
+      localStorage.setItem('refresh_token', result.data.refresh_token);
       
       return true;
     } else {
       // Refresh failed, clear tokens
+      console.error('Token refresh failed:', result.error?.message);
       clearAuthData();
       return false;
     }
@@ -268,15 +291,21 @@ Authorization: Bearer <access_token>
 **Response:**
 ```json
 {
-  "id": "user-uuid",
-  "email": "user@example.com",
-  "first_name": "John",
-  "last_name": "Doe",
-  "username": "john_doe_123",
-  "display_name": "John Doe",
-  "avatar_url": "https://...",
-  "bio": "Software Developer",
-  "locale": "en"
+  "success": true,
+  "message": "User information retrieved successfully",
+  "data": {
+    "id": "user-uuid",
+    "provider": "google",
+    "first_name": "John",
+    "last_name": "Doe",
+    "username": "john_doe_123",
+    "email": "user@example.com",
+    "display_name": "John Doe",
+    "bio": "Software Developer",
+    "avatar_url": "https://...",
+    "created_at": "2023-12-01T10:30:00Z"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
@@ -319,9 +348,10 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+      const result = await response.json();
+
+      if (result.success) {
+        setUser(result.data);
       } else if (response.status === 401) {
         // Try to refresh token
         const refreshed = await refreshAccessToken();
@@ -340,8 +370,13 @@ export const AuthProvider = ({ children }) => {
   const login = async () => {
     try {
       const response = await fetch('/api/v1/auth/google');
-      const { auth_url } = await response.json();
-      window.location.href = auth_url;
+      const result = await response.json();
+      
+      if (result.success) {
+        window.location.href = result.data.auth_url;
+      } else {
+        console.error('Login error:', result.error?.message);
+      }
     } catch (error) {
       console.error('Login error:', error);
     }
@@ -372,10 +407,11 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
+      const result = await response.json();
+      
+      if (result.success) {
+        localStorage.setItem('access_token', result.data.access_token);
+        localStorage.setItem('refresh_token', result.data.refresh_token);
         return true;
       }
       return false;
@@ -408,52 +444,106 @@ export const AuthProvider = ({ children }) => {
 **Invalid/Expired Token (401):**
 ```json
 {
-  "error": "Unauthorized",
-  "message": "Invalid or expired token"
+  "success": false,
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Invalid or expired token",
+    "details": "token has expired"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
 **Missing Authorization Header (401):**
 ```json
 {
-  "error": "Unauthorized", 
-  "message": "Missing authorization header"
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
 **Invalid Authorization Code (400):**
 ```json
 {
-  "error": "Bad Request",
-  "message": "Invalid authorization code"
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Failed to exchange authorization code",
+    "details": "authorization code was not found"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
 **State Token Mismatch (400):**
 ```json
 {
-  "error": "Bad Request",
-  "message": "Invalid state token"
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Code and state are required",
+    "details": "Both 'code' and 'state' fields must be provided"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Rate Limit Exceeded (429):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Try again later.",
+    "details": "Request ID: req_abc123"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
 }
 ```
 
 ### Error Handling Best Practices
 
 ```javascript
-const handleApiError = (response) => {
+const handleApiError = async (response) => {
+  const result = await response.json();
+  
+  // Check if it's a structured error response
+  if (!result.success && result.error) {
+    const { code, message, details } = result.error;
+    
+    switch (code) {
+      case 'UNAUTHORIZED':
+      case 'INVALID_TOKEN':
+      case 'INVALID_CLAIMS':
+        // Auth errors - redirect to login
+        clearAuthData();
+        window.location.href = '/login';
+        break;
+      case 'VALIDATION_ERROR':
+        // Validation errors - show specific message
+        throw new Error(details || message);
+      case 'RATE_LIMIT_EXCEEDED':
+        // Rate limit - show rate limit message
+        throw new Error('Too many requests. Please try again later.');
+      case 'INTERNAL_ERROR':
+        // Server error - show generic message
+        throw new Error('Something went wrong. Please try again.');
+      default:
+        throw new Error(message || 'Request failed');
+    }
+  }
+  
+  // Fallback for non-structured responses
   switch (response.status) {
     case 401:
-      // Unauthorized - redirect to login
       clearAuthData();
       window.location.href = '/login';
       break;
-    case 400:
-      // Bad request - show error message
-      return response.json().then(data => {
-        throw new Error(data.message);
-      });
     case 500:
-      // Server error - show generic message
       throw new Error('Something went wrong. Please try again.');
     default:
       throw new Error('Request failed');
@@ -505,4 +595,49 @@ const mockAuthResponse = {
 };
 ```
 
-This completes the frontend integration guide for the Pitstop authentication system. The backend handles all the OAuth complexity, state management, and security measures, making frontend integration straightforward.
+## Structured API Helper Function
+
+For consistent handling of the structured response format, use this helper function:
+
+```javascript
+const apiCall = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, options);
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      // Handle structured error
+      const error = new Error(result.error?.message || 'API call failed');
+      error.code = result.error?.code;
+      error.details = result.error?.details;
+      throw error;
+    }
+  } catch (error) {
+    if (error.code) throw error; // Structured error, re-throw
+    throw new Error('Network or parsing error');
+  }
+};
+
+// Usage example
+const getCurrentUser = async () => {
+  try {
+    const user = await apiCall('/api/v1/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      },
+    });
+    return user;
+  } catch (error) {
+    if (error.code === 'UNAUTHORIZED') {
+      // Handle auth error
+      clearAuthData();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
+};
+```
+
+This completes the frontend integration guide for the Pitstop authentication system. The backend handles all the OAuth complexity, state management, and security measures, while providing **consistent structured responses** for easy frontend integration.
