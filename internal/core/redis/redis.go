@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
@@ -11,12 +12,20 @@ import (
 var ctx = context.Background()
 
 func Connect(config *config.Config) (*redis.Client, error) {
-	logger.Info("Attempting to connect to Redis")
+	logger.Info("Attempting to connect to Redis", "url", config.Redis.URL)
 
 	opts, err := redis.ParseURL(config.Redis.URL)
 	if err != nil {
 		logger.Error("Failed to parse Redis URL", "error", err.Error())
 		return nil, err
+	}
+
+	// Configure TLS for production Redis connections
+	if opts.TLSConfig != nil {
+		opts.TLSConfig = &tls.Config{
+			InsecureSkipVerify: false,
+			ServerName:         opts.Addr,
+		}
 	}
 
 	client := redis.NewClient(opts)
