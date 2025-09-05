@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"crypto/tls"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
@@ -22,9 +23,11 @@ func Connect(config *config.Config) (*redis.Client, error) {
 
 	// Configure TLS for production Redis connections
 	if opts.TLSConfig != nil {
+		// Extract hostname without port for ServerName
+		hostname := strings.Split(opts.Addr, ":")[0]
 		opts.TLSConfig = &tls.Config{
 			InsecureSkipVerify: false,
-			ServerName:         opts.Addr,
+			ServerName:         hostname,
 		}
 	}
 
