@@ -23,7 +23,7 @@ func (r *UserRepository) Create(user *domain.User) error {
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(id string) (*domain.User, error) {
 	var user domain.User
-	err := r.db.First(&user, id).Error
+	err := r.db.Where("id = ?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -80,5 +80,5 @@ func (r *UserRepository) Update(user *domain.User) error {
 
 // Delete soft deletes a user
 func (r *UserRepository) Delete(id string) error {
-	return r.db.Delete(&domain.User{}, id).Error
+	return r.db.Where("id = ?", id).Delete(&domain.User{}).Error
 }

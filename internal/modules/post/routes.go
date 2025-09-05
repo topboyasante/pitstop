@@ -2,6 +2,8 @@ package post
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/topboyasante/pitstop/internal/core/config"
+	"github.com/topboyasante/pitstop/internal/core/middleware"
 	"github.com/topboyasante/pitstop/internal/modules/post/handler"
 )
 
@@ -9,7 +11,11 @@ import (
 func RegisterRoutes(router fiber.Router, postHandler *handler.PostHandler) {
 	posts := router.Group("/posts")
 	
+	// Public routes
 	posts.Get("/", postHandler.GetAllPosts)
-	posts.Post("/", postHandler.CreatePost)        // Requires auth
 	posts.Get("/:id", postHandler.GetPost)
+	
+	// Protected routes
+	protected := posts.Group("", middleware.JWTMiddleware(config.Get()))
+	protected.Post("/", postHandler.CreatePost)
 }

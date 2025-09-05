@@ -276,3 +276,8 @@ func (as *AuthService) RefreshTokens(refreshToken string) (*authdto.JWTTokenResp
 		ExpiresAt:    expiresAt,
 	}, nil
 }
+
+// GetUserByID gets a user by ID using the user service
+func (as *AuthService) GetUserByID(id string) (*dto.UserResponse, error) {
+	return as.userService.GetUserByID(id)
+}

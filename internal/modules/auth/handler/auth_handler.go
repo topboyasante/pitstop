@@ -144,11 +144,14 @@ func (h *AuthHandler) ExchangeCode(c *fiber.Ctx) error {
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	audience := c.Locals("audience").(string)
 
-	return c.JSON(fiber.Map{
-		"user_id":  userID,
-		"audience": audience,
-		"message":  "Authentication successful",
-	})
+	// Get user from database via user service
+	user, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	return c.JSON(user)
 }

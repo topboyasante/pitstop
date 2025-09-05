@@ -5,8 +5,12 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
-	"github.com/topboyasante/pitstop/internal/modules/auth/handler"
+	authHandler "github.com/topboyasante/pitstop/internal/modules/auth/handler"
 	authService "github.com/topboyasante/pitstop/internal/modules/auth/service"
+	postHandler "github.com/topboyasante/pitstop/internal/modules/post/handler"
+	postRepository "github.com/topboyasante/pitstop/internal/modules/post/repository"
+	postService "github.com/topboyasante/pitstop/internal/modules/post/service"
+	userHandler "github.com/topboyasante/pitstop/internal/modules/user/handler"
 	userRepository "github.com/topboyasante/pitstop/internal/modules/user/repository"
 	userService "github.com/topboyasante/pitstop/internal/modules/user/service"
 	"github.com/topboyasante/pitstop/internal/shared/events"
@@ -24,12 +28,15 @@ type Provider struct {
 	Validator *validator.Validate
 	EventBus  *events.EventBus
 
-	// Auth module
-	AuthHandler *handler.AuthHandler
+	// Handlers
+	AuthHandler *authHandler.AuthHandler
+	UserHandler *userHandler.UserHandler
+	PostHandler *postHandler.PostHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
 	AuthService *authService.AuthService
 	UserService *userService.UserService
+	PostService *postService.PostService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -40,10 +47,16 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	// Initialize User module
 	userRepo := userRepository.NewUserRepository(db)
 	userService := userService.NewUserService(userRepo, validator, eventBus)
+	userHandler := userHandler.NewUserHandler(userService)
+
+	// Initialize Post module
+	postRepo := postRepository.NewPostRepository(db)
+	postService := postService.NewPostService(postRepo, validator, eventBus)
+	postHandler := postHandler.NewPostHandler(postService)
 
 	// Initialize Auth module (depends on user service)
 	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userService)
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := authHandler.NewAuthHandler(authService)
 
 	// Set up event subscribers
 	setupEventSubscribers(eventBus, authService)
@@ -56,9 +69,12 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		EventBus:  eventBus,
 
 		AuthHandler: authHandler,
+		UserHandler: userHandler,
+		PostHandler: postHandler,
 
 		AuthService: authService,
 		UserService: userService,
+		PostService: postService,
 	}
 }
 

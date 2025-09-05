@@ -32,7 +32,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 		}
 
 		path := c.Path()
-		
+
 		// Check if this is a public route
 		isPublic := false
 		for _, publicRoute := range publicRoutes {
@@ -42,7 +42,7 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 			}
 		}
 
-		// Get user ID from JWT middleware (stored in Locals by auth middleware)
+		// Get user ID from JWT middleware if available (for user-specific rate limiting)
 		userID := ""
 		if userIDLocal := c.Locals("userID"); userIDLocal != nil {
 			if uid, ok := userIDLocal.(string); ok {
@@ -50,22 +50,6 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 			}
 		}
 
-		// For non-public routes, user must be authenticated
-		if !isPublic && userID == "" {
-			logger.Error("Request failed with error",
-				"event", "request.error",
-				"request_id", requestID,
-				"path", path,
-				"method", c.Method(),
-				"ip", c.IP(),
-				"user_agent", c.Get("User-Agent"),
-				"error", "Authentication required")
-
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Authentication required",
-			})
-		}
-		
 		// Get IP address
 		ip := c.IP()
 
@@ -81,9 +65,9 @@ func RateLimiter(redisClient *redis.Client) fiber.Handler {
 				{true, fmt.Sprintf("rate_limit:public:ip:%s:%s", ip, hour), 100, "public route rate limit by IP"},
 			}
 		} else {
-			// For authenticated routes, apply user-based rate limiting
+			// For authenticated routes, apply user-based and IP-based rate limiting
 			limits = [][4]any{
-				{true, fmt.Sprintf("rate_limit:auth:user:%s:%s", userID, hour), 1000, "authenticated rate limit by user"},
+				{userID != "", fmt.Sprintf("rate_limit:auth:user:%s:%s", userID, hour), 1000, "authenticated rate limit by user"},
 				{true, fmt.Sprintf("rate_limit:auth:ip:%s:%s", ip, hour), 500, "authenticated rate limit by IP"},
 			}
 		}
