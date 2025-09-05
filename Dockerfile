@@ -13,4 +13,5 @@ FROM debian:bookworm
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /run-app /usr/local/bin/
+COPY --from=builder /usr/src/app/docs /docs
 CMD ["run-app"]
