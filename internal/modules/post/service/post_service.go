@@ -47,23 +47,37 @@ func (s *PostService) CreatePost(req dto.CreatePostRequest) (*dto.PostResponse, 
 
 	return &dto.PostResponse{
 		ID:        post.ID,
+		UserID:    post.UserID,
 		Content:   post.Content,
 		CreatedAt: post.CreatedAt,
+		UpdatedAt: post.UpdatedAt,
 	}, nil
 }
 
 // GetPostByID retrieves a post by ID
-func (s *PostService) GetPostByID(id uint) (*dto.PostResponse, error) {
+func (s *PostService) GetPostByID(id string) (*dto.PostResponse, error) {
 	post, err := s.postRepo.GetByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("post not found: %w", err)
 	}
 
-	return &dto.PostResponse{
+	response := &dto.PostResponse{
 		ID:        post.ID,
+		UserID:    post.UserID,
 		Content:   post.Content,
 		CreatedAt: post.CreatedAt,
-	}, nil
+		UpdatedAt: post.UpdatedAt,
+	}
+
+	if post.User != nil {
+		response.User = &dto.PostUserResponse{
+			Username:    post.User.Username,
+			DisplayName: post.User.DisplayName,
+			AvatarURL:   post.User.AvatarURL,
+		}
+	}
+
+	return response, nil
 }
 
 // GetAllPosts retrieves all posts with pagination
@@ -84,8 +98,18 @@ func (s *PostService) GetAllPosts(page, limit int) (*dto.PostsResponse, error) {
 	for i, post := range posts {
 		postResponses[i] = dto.PostResponse{
 			ID:        post.ID,
+			UserID:    post.UserID,
 			Content:   post.Content,
 			CreatedAt: post.CreatedAt,
+			UpdatedAt: post.UpdatedAt,
+		}
+
+		if post.User != nil {
+			postResponses[i].User = &dto.PostUserResponse{
+				Username:    post.User.Username,
+				DisplayName: post.User.DisplayName,
+				AvatarURL:   post.User.AvatarURL,
+			}
 		}
 	}
 

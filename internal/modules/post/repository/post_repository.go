@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"github.com/topboyasante/pitstop/internal/modules/post/domain"
 	"gorm.io/gorm"
 )
@@ -17,13 +18,16 @@ func NewPostRepository(db *gorm.DB) *PostRepository {
 
 // Create creates a new post
 func (r *PostRepository) Create(post *domain.Post) error {
+	if post.ID == "" {
+		post.ID = uuid.NewString()
+	}
 	return r.db.Create(post).Error
 }
 
 // GetByID retrieves a post by ID
-func (r *PostRepository) GetByID(id uint) (*domain.Post, error) {
+func (r *PostRepository) GetByID(id string) (*domain.Post, error) {
 	var post domain.Post
-	err := r.db.First(&post, id).Error
+	err := r.db.Preload("User").Where("id = ?", id).First(&post).Error
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +47,8 @@ func (r *PostRepository) GetAll(page, limit int) ([]domain.Post, int64, error) {
 	}
 
 	// Get posts
-	if err := r.db.Offset(offset).
+	if err := r.db.Preload("User").
+		Offset(offset).
 		Limit(limit).
 		Order("created_at DESC").
 		Find(&posts).Error; err != nil {
@@ -59,6 +64,6 @@ func (r *PostRepository) Update(post *domain.Post) error {
 }
 
 // Delete soft deletes a post
-func (r *PostRepository) Delete(id uint) error {
-	return r.db.Delete(&domain.Post{}, id).Error
+func (r *PostRepository) Delete(id string) error {
+	return r.db.Where("id = ?", id).Delete(&domain.Post{}).Error
 }

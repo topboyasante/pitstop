@@ -283,7 +283,7 @@ const docTemplate = `{
                 "summary": "Get a post by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",

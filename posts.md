@@ -6,6 +6,8 @@ This document explains how to integrate with the Pitstop backend Posts API from 
 
 The Posts API allows you to create, retrieve, and manage posts in the Pitstop platform. All posts endpoints require authentication via JWT tokens.
 
+**Note:** All GET requests for posts (both single post and posts list) automatically include essential user information (username, display name, and avatar URL) for the post author, eliminating the need for separate user API calls.
+
 All API responses follow a **structured format** for consistency:
 
 ```json
@@ -50,16 +52,26 @@ Authorization: Bearer <access_token>
   "message": "Posts retrieved successfully",
   "data": [
     {
-      "id": 1,
+      "id": "post-uuid-abc123",
       "content": "This is my first post!",
       "user_id": "user-uuid-123",
+      "user": {
+        "username": "johndoe",
+        "display_name": "John Doe",
+        "avatar_url": "https://example.com/avatar/john.jpg"
+      },
       "created_at": "2023-12-01T10:30:00Z",
       "updated_at": "2023-12-01T10:30:00Z"
     },
     {
-      "id": 2,
+      "id": "post-uuid-def456",
       "content": "Another interesting post...",
-      "user_id": "user-uuid-456", 
+      "user_id": "user-uuid-456",
+      "user": {
+        "username": "janesmith",
+        "display_name": "Jane Smith",
+        "avatar_url": "https://example.com/avatar/jane.jpg"
+      },
       "created_at": "2023-12-01T09:15:00Z",
       "updated_at": "2023-12-01T09:15:00Z"
     }
@@ -126,7 +138,7 @@ Content-Type: application/json
   "success": true,
   "message": "Post created successfully", 
   "data": {
-    "id": 123,
+    "id": "post-uuid-xyz789",
     "content": "This is my new post content!",
     "user_id": "user-uuid-123",
     "created_at": "2023-12-01T10:30:00Z",
@@ -183,9 +195,14 @@ Authorization: Bearer <access_token>
   "success": true,
   "message": "Post retrieved successfully",
   "data": {
-    "id": 123,
+    "id": "post-uuid-abc123",
     "content": "This is the specific post content.",
     "user_id": "user-uuid-123",
+    "user": {
+      "username": "johndoe",
+      "display_name": "John Doe",
+      "avatar_url": "https://example.com/avatar/john.jpg"
+    },
     "created_at": "2023-12-01T10:30:00Z",
     "updated_at": "2023-12-01T10:30:00Z"
   },
@@ -341,7 +358,7 @@ const displayPosts = async (page = 1) => {
     
     // Display posts
     result.posts.forEach(post => {
-      console.log(`Post ${post.id}: ${post.content}`);
+      console.log(`Post ${post.id} by ${post.user?.display_name || post.user?.username}: ${post.content}`);
     });
     
     // Display pagination info
@@ -425,9 +442,14 @@ const mockPostsResponse = {
   message: "Posts retrieved successfully",
   data: [
     {
-      id: 1,
+      id: "test-post-uuid-123",
       content: "Test post content",
       user_id: "test-user-id",
+      user: {
+        username: "testuser",
+        display_name: "Test User",
+        avatar_url: "https://example.com/avatar/test.jpg"
+      },
       created_at: "2023-12-01T10:30:00Z",
       updated_at: "2023-12-01T10:30:00Z"
     }
@@ -447,7 +469,7 @@ const mockCreatePostResponse = {
   success: true,
   message: "Post created successfully",
   data: {
-    id: 123,
+    id: "test-post-uuid-456",
     content: "New test post",
     user_id: "test-user-id",
     created_at: "2023-12-01T10:30:00Z",

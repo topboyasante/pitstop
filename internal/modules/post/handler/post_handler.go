@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/topboyasante/pitstop/internal/core/logger"
@@ -80,18 +81,17 @@ func (h *PostHandler) CreatePost(c *fiber.Ctx) error {
 // @Tags posts
 // @Accept json
 // @Produce json
-// @Param id path int true "Post ID"
+// @Param id path string true "Post ID"
 // @Success 200 {object} response.APIResponse
 // @Failure 404 {object} response.APIResponse
 // @Router /posts/{id} [get]
 func (h *PostHandler) GetPost(c *fiber.Ctx) error {
-	idStr := c.Params("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		return response.ValidationErrorJSON(c, "Invalid post ID", "ID must be a valid number")
+	id := c.Params("id")
+	if strings.TrimSpace(id) == "" {
+		return response.ValidationErrorJSON(c, "Invalid post ID", "ID cannot be empty")
 	}
 
-	post, err := h.postService.GetPostByID(uint(id))
+	post, err := h.postService.GetPostByID(id)
 	if err != nil {
 		return response.NotFoundJSON(c, "Post")
 	}
