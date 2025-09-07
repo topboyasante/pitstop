@@ -124,6 +124,7 @@ func (s *CommentService) mapCommentToResponse(comment *domain.Comment) *dto.Comm
 		PostID:    comment.PostID,
 		UserID:    comment.UserID,
 		Content:   comment.Content,
+		LikeCount: comment.LikeCount,
 		CreatedAt: comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}

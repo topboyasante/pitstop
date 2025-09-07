@@ -48,7 +48,7 @@ func (r *PostRepository) GetByID(id string) (*domain.Post, error) {
 
 	// Calculate like count
 	var likeCount int64
-	r.db.Model(&domain.Like{}).Where("post_id = ?", id).Count(&likeCount)
+	r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", id, domain.LikableTypePost).Count(&likeCount)
 	post.LikeCount = likeCount
 
 	return &post, nil
@@ -82,7 +82,7 @@ func (r *PostRepository) GetAll(page, limit int) ([]domain.Post, int64, error) {
 		posts[i].CommentCount = commentCount
 		
 		var likeCount int64
-		r.db.Model(&domain.Like{}).Where("post_id = ?", posts[i].ID).Count(&likeCount)
+		r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", posts[i].ID, domain.LikableTypePost).Count(&likeCount)
 		posts[i].LikeCount = likeCount
 	}
 

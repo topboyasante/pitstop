@@ -31,6 +31,12 @@ func (r *CommentRepository) GetByID(id string) (*domain.Comment, error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	// Calculate like count
+	var likeCount int64
+	r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", id, domain.LikableTypeComment).Count(&likeCount)
+	comment.LikeCount = likeCount
+	
 	return &comment, nil
 }
 
@@ -44,7 +50,26 @@ func (r *CommentRepository) GetByPostID(postID string) ([]domain.Comment, error)
 		Where("post_id = ? AND parent_id IS NULL", postID).
 		Order("created_at DESC").
 		Find(&comments).Error
-	return comments, err
+		
+	if err != nil {
+		return nil, err
+	}
+	
+	// Calculate like counts for all comments and replies
+	for i := range comments {
+		var likeCount int64
+		r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", comments[i].ID, domain.LikableTypeComment).Count(&likeCount)
+		comments[i].LikeCount = likeCount
+		
+		// Calculate like counts for replies
+		for j := range comments[i].Replies {
+			var replyLikeCount int64
+			r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", comments[i].Replies[j].ID, domain.LikableTypeComment).Count(&replyLikeCount)
+			comments[i].Replies[j].LikeCount = replyLikeCount
+		}
+	}
+	
+	return comments, nil
 }
 
 // GetRepliesByParentID retrieves all replies for a specific comment
@@ -54,7 +79,19 @@ func (r *CommentRepository) GetRepliesByParentID(parentID string) ([]domain.Comm
 		Where("parent_id = ?", parentID).
 		Order("created_at ASC").
 		Find(&replies).Error
-	return replies, err
+		
+	if err != nil {
+		return nil, err
+	}
+	
+	// Calculate like counts for all replies
+	for i := range replies {
+		var likeCount int64
+		r.db.Model(&domain.Like{}).Where("likable_id = ? AND likable_type = ?", replies[i].ID, domain.LikableTypeComment).Count(&likeCount)
+		replies[i].LikeCount = likeCount
+	}
+	
+	return replies, nil
 }
 
 // Update updates a comment

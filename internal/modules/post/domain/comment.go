@@ -16,6 +16,7 @@ type Comment struct {
 	Parent    *Comment                 `gorm:"foreignKey:ParentID;references:ID" json:"parent,omitempty"`
 	Replies   []Comment                `gorm:"foreignKey:ParentID" json:"replies,omitempty"`
 	Content   string                   `gorm:"type:text" json:"content" validate:"required"`
+	LikeCount int64                    `gorm:"-" json:"like_count"`
 	CreatedAt time.Time                `json:"created_at"`
 	UpdatedAt time.Time                `json:"updated_at"`
 }

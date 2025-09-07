@@ -15,6 +15,7 @@ type CommentResponse struct {
 	Parent    *CommentResponse `json:"parent,omitempty"`
 	Replies   []CommentResponse `json:"replies,omitempty"`
 	Content   string          `json:"content"`
+	LikeCount int64           `json:"like_count"`
 	CreatedAt string          `json:"created_at"`
 	UpdatedAt string          `json:"updated_at"`
 }

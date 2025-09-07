@@ -16,6 +16,7 @@ func RegisterRoutes(router fiber.Router, postHandler *handler.PostHandler, comme
 	posts.Get("/:id", postHandler.GetPost)
 	posts.Get("/:post_id/comments", commentHandler.GetComments)
 	posts.Get("/:post_id/likes", likeHandler.GetLikesByPost)
+	posts.Get("/:post_id/comments/:comment_id/likes", likeHandler.GetLikesByComment)
 	
 	// Protected routes
 	protected := posts.Group("", middleware.JWTMiddleware(config.Get()))
@@ -24,4 +25,6 @@ func RegisterRoutes(router fiber.Router, postHandler *handler.PostHandler, comme
 	protected.Post("/:post_id/comments/:parent_comment_id/reply", commentHandler.CreateReply)
 	protected.Post("/:post_id/like", likeHandler.ToggleLike)
 	protected.Get("/:post_id/like/status", likeHandler.CheckUserLiked)
+	protected.Post("/:post_id/comments/:comment_id/like", likeHandler.ToggleCommentLike)
+	protected.Get("/:post_id/comments/:comment_id/like/status", likeHandler.CheckUserLikedComment)
 }
