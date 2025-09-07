@@ -177,15 +177,17 @@ func (s *UserService) GetAllUsers(page, limit int) (*dto.UsersResponse, error) {
 // mapUserToResponse converts domain User to UserResponse DTO
 func (s *UserService) mapUserToResponse(user *domain.User) *dto.UserResponse {
 	return &dto.UserResponse{
-		ID:          user.ID,
-		Provider:    user.Provider,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		Username:    user.Username,
-		Email:       user.Email,
-		DisplayName: user.DisplayName,
-		Bio:         user.Bio,
-		AvatarURL:   user.AvatarURL,
-		CreatedAt:   user.CreatedAt,
+		ID:             user.ID,
+		Provider:       user.Provider,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		Username:       user.Username,
+		Email:          user.Email,
+		DisplayName:    user.DisplayName,
+		Bio:            user.Bio,
+		AvatarURL:      user.AvatarURL,
+		FollowerCount:  user.FollowerCount,
+		FollowingCount: user.FollowingCount,
+		CreatedAt:      user.CreatedAt,
 	}
 }

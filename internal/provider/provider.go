@@ -34,6 +34,7 @@ type Provider struct {
 	PostHandler    *postHandler.PostHandler
 	CommentHandler *postHandler.CommentHandler
 	LikeHandler    *postHandler.LikeHandler
+	FollowHandler  *userHandler.FollowHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
 	AuthService    *authService.AuthService
@@ -41,6 +42,7 @@ type Provider struct {
 	PostService    *postService.PostService
 	CommentService *postService.CommentService
 	LikeService    *postService.LikeService
+	FollowService  *userService.FollowService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -50,8 +52,13 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 
 	// Initialize User module
 	userRepo := userRepository.NewUserRepository(db)
-	userService := userService.NewUserService(userRepo, validator, eventBus)
-	userHandler := userHandler.NewUserHandler(userService)
+	userSvc := userService.NewUserService(userRepo, validator, eventBus)
+	userHdlr := userHandler.NewUserHandler(userSvc)
+
+	// Initialize Follow module
+	followRepo := userRepository.NewFollowRepository(db)
+	followSvc := userService.NewFollowService(followRepo, userRepo, eventBus)
+	followHdlr := userHandler.NewFollowHandler(followSvc)
 
 	// Initialize Post module
 	postRepo := postRepository.NewPostRepository(db)
@@ -69,7 +76,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	likeHdlr := postHandler.NewLikeHandler(likeSvc)
 
 	// Initialize Auth module (depends on user service)
-	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userService)
+	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userSvc)
 	authHandler := authHandler.NewAuthHandler(authService)
 
 	// Set up event subscribers
@@ -83,16 +90,18 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		EventBus:  eventBus,
 
 		AuthHandler:    authHandler,
-		UserHandler:    userHandler,
+		UserHandler:    userHdlr,
 		PostHandler:    postHdlr,
 		CommentHandler: commentHdlr,
 		LikeHandler:    likeHdlr,
+		FollowHandler:  followHdlr,
 
 		AuthService:    authService,
-		UserService:    userService,
+		UserService:    userSvc,
 		PostService:    postSvc,
 		CommentService: commentSvc,
 		LikeService:    likeSvc,
+		FollowService:  followSvc,
 	}
 }
 

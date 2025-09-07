@@ -25,16 +25,18 @@ type UpdateUserRequest struct {
 
 // UserResponse represents a user in API responses
 type UserResponse struct {
-	ID          string    `json:"id"`
-	Provider    string    `json:"provider"`
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
-	Username    string    `json:"username,omitempty"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"display_name,omitempty"`
-	Bio         string    `json:"bio,omitempty"`
-	AvatarURL   string    `json:"avatar_url,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	Provider       string    `json:"provider"`
+	FirstName      string    `json:"first_name"`
+	LastName       string    `json:"last_name"`
+	Username       string    `json:"username,omitempty"`
+	Email          string    `json:"email"`
+	DisplayName    string    `json:"display_name,omitempty"`
+	Bio            string    `json:"bio,omitempty"`
+	AvatarURL      string    `json:"avatar_url,omitempty"`
+	FollowerCount  int64     `json:"follower_count"`
+	FollowingCount int64     `json:"following_count"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // UsersResponse represents a paginated list of users

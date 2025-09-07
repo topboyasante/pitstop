@@ -80,7 +80,7 @@ func main() {
 
 	// Register modular routes
 	auth.RegisterRoutes(v1, provider.AuthHandler)
-	user.RegisterRoutes(v1, provider.UserHandler)
+	user.RegisterRoutes(v1, provider.UserHandler, provider.FollowHandler)
 	post.RegisterRoutes(v1, provider.PostHandler, provider.CommentHandler, provider.LikeHandler)
 
 	if err := app.Listen(":" + cfg.Server.Port); err != nil {

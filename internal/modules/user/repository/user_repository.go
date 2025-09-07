@@ -27,6 +27,10 @@ func (r *UserRepository) GetByID(id string) (*domain.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Calculate follow counts
+	r.calculateFollowCounts(&user)
+
 	return &user, nil
 }
 
@@ -70,6 +74,11 @@ func (r *UserRepository) GetAll(page, limit int) ([]domain.User, int64, error) {
 		return nil, 0, err
 	}
 
+	// Calculate follow counts for all users
+	for i := range users {
+		r.calculateFollowCounts(&users[i])
+	}
+
 	return users, totalCount, nil
 }
 
@@ -81,4 +90,17 @@ func (r *UserRepository) Update(user *domain.User) error {
 // Delete soft deletes a user
 func (r *UserRepository) Delete(id string) error {
 	return r.db.Where("id = ?", id).Delete(&domain.User{}).Error
+}
+
+// calculateFollowCounts calculates and sets follower/following counts for a user
+func (r *UserRepository) calculateFollowCounts(user *domain.User) {
+	// Get follower count
+	var followerCount int64
+	r.db.Model(&domain.Follow{}).Where("following_id = ?", user.ID).Count(&followerCount)
+	user.FollowerCount = followerCount
+
+	// Get following count
+	var followingCount int64
+	r.db.Model(&domain.Follow{}).Where("follower_id = ?", user.ID).Count(&followingCount)
+	user.FollowingCount = followingCount
 }

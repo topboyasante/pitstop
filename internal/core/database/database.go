@@ -43,6 +43,7 @@ func runMigrations(db *gorm.DB) error {
 
 	err := db.AutoMigrate(
 		&userDomain.User{},
+		&userDomain.Follow{},
 		&postDomain.Post{},
 		&postDomain.Comment{},
 		&postDomain.Like{},

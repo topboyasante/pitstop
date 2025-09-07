@@ -14,7 +14,6 @@ type Post struct {
 	Content      string                   `gorm:"type:text" json:"content" validate:"required"`
 	Comments     []Comment                `gorm:"foreignKey:PostID" json:"comments,omitempty"`
 	CommentCount int64                    `gorm:"-" json:"comment_count"`
-	Likes        []Like                   `gorm:"foreignKey:PostID" json:"likes,omitempty"`
 	LikeCount    int64                    `gorm:"-" json:"like_count"`
 	CreatedAt    time.Time                `json:"created_at"`
 	UpdatedAt    time.Time                `json:"updated_at"`

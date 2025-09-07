@@ -362,6 +362,108 @@ paths:
       summary: Create a new comment
       tags:
       - Comments
+  /posts/{post_id}/comments/{comment_id}/like:
+    post:
+      consumes:
+      - application/json
+      description: Like or unlike a comment
+      parameters:
+      - description: Post ID
+        in: path
+        name: post_id
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: comment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Toggle like on a comment
+      tags:
+      - likes
+  /posts/{post_id}/comments/{comment_id}/like/status:
+    get:
+      consumes:
+      - application/json
+      description: Check if the authenticated user has liked a specific comment
+      parameters:
+      - description: Post ID
+        in: path
+        name: post_id
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: comment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Check if user liked a comment
+      tags:
+      - likes
+  /posts/{post_id}/comments/{comment_id}/likes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all users who liked a specific comment
+      parameters:
+      - description: Post ID
+        in: path
+        name: post_id
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: comment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Get likes for a comment
+      tags:
+      - likes
   /posts/{post_id}/comments/{parent_comment_id}/reply:
     post:
       consumes:
@@ -569,4 +671,120 @@ paths:
       summary: Get a user by ID
       tags:
       - users
+  /users/{user_id}/follow:
+    post:
+      consumes:
+      - application/json
+      description: Follow or unfollow a user
+      parameters:
+      - description: User ID to follow/unfollow
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Toggle follow on a user
+      tags:
+      - follows
+  /users/{user_id}/follow/status:
+    get:
+      consumes:
+      - application/json
+      description: Check if the authenticated user is following a specific user
+      parameters:
+      - description: User ID to check
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Check follow status
+      tags:
+      - follows
+  /users/{user_id}/followers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all users who follow a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Get followers for a user
+      tags:
+      - follows
+  /users/{user_id}/following:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all users that a specific user is following
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Get users being followed
+      tags:
+      - follows
 swagger: "2.0"
