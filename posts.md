@@ -21,13 +21,23 @@ All API responses follow a **structured format** for consistency:
 }
 ```
 
-## Authentication Required
+## Authentication
 
-All Posts API endpoints require authentication. Include the JWT access token in the Authorization header:
+Some Posts API endpoints require authentication. For protected endpoints, include the JWT access token in the Authorization header:
 
 ```http
 Authorization: Bearer <access_token>
 ```
+
+**Public endpoints** (no authentication required):
+- GET /api/v1/posts (Get all posts)
+- GET /api/v1/posts/{id} (Get single post)  
+- GET /api/v1/posts/{post_id}/comments (Get comments)
+
+**Protected endpoints** (authentication required):
+- POST /api/v1/posts (Create post)
+- POST /api/v1/posts/{post_id}/comments (Create comment)
+- POST /api/v1/posts/{post_id}/comments/{parent_comment_id}/reply (Create reply)
 
 ## API Endpoints
 
@@ -38,7 +48,6 @@ Retrieve a paginated list of all posts.
 **Request:**
 ```http
 GET /api/v1/posts?page=1&limit=20
-Authorization: Bearer <access_token>
 ```
 
 **Parameters:**
@@ -60,6 +69,7 @@ Authorization: Bearer <access_token>
         "display_name": "John Doe",
         "avatar_url": "https://example.com/avatar/john.jpg"
       },
+      "comment_count": 5,
       "created_at": "2023-12-01T10:30:00Z",
       "updated_at": "2023-12-01T10:30:00Z"
     },
@@ -72,6 +82,7 @@ Authorization: Bearer <access_token>
         "display_name": "Jane Smith",
         "avatar_url": "https://example.com/avatar/jane.jpg"
       },
+      "comment_count": 12,
       "created_at": "2023-12-01T09:15:00Z",
       "updated_at": "2023-12-01T09:15:00Z"
     }
@@ -203,6 +214,39 @@ Authorization: Bearer <access_token>
       "display_name": "John Doe",
       "avatar_url": "https://example.com/avatar/john.jpg"
     },
+    "comment_count": 8,
+    "comments": [
+      {
+        "id": "comment-uuid-123",
+        "post_id": "post-uuid-abc123",
+        "user_id": "user-uuid-456",
+        "user": {
+          "username": "janesmith",
+          "display_name": "Jane Smith",
+          "avatar_url": "https://example.com/avatar/jane.jpg"
+        },
+        "content": "Great post!",
+        "parent_id": null,
+        "replies": [
+          {
+            "id": "comment-uuid-789",
+            "post_id": "post-uuid-abc123",
+            "user_id": "user-uuid-123",
+            "user": {
+              "username": "johndoe",
+              "display_name": "John Doe",
+              "avatar_url": "https://example.com/avatar/john.jpg"
+            },
+            "content": "Thank you!",
+            "parent_id": "comment-uuid-123",
+            "created_at": "2023-12-01T10:35:00Z",
+            "updated_at": "2023-12-01T10:35:00Z"
+          }
+        ],
+        "created_at": "2023-12-01T10:32:00Z",
+        "updated_at": "2023-12-01T10:32:00Z"
+      }
+    ],
     "created_at": "2023-12-01T10:30:00Z",
     "updated_at": "2023-12-01T10:30:00Z"
   },
@@ -230,6 +274,208 @@ const getPost = async (postId) => {
     }
   } catch (error) {
     console.error('Error fetching post:', error);
+    throw error;
+  }
+};
+```
+
+### 4. Create Comment
+
+Create a new comment on a post.
+
+**Request:**
+```http
+POST /api/v1/posts/{post_id}/comments
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "content": "This is my comment on the post!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Comment created successfully",
+  "data": {
+    "id": "comment-uuid-abc123",
+    "post_id": "post-uuid-123",
+    "user_id": "user-uuid-456",
+    "content": "This is my comment on the post!",
+    "parent_id": null,
+    "created_at": "2023-12-01T10:30:00Z",
+    "updated_at": "2023-12-01T10:30:00Z"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Frontend Implementation:**
+```javascript
+const createComment = async (postId, content) => {
+  try {
+    const accessToken = localStorage.getItem('access_token');
+    const response = await fetch(`/api/v1/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: content,
+      }),
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error?.message || 'Failed to create comment');
+    }
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    throw error;
+  }
+};
+```
+
+### 5. Create Reply (Sub-comment)
+
+Create a reply to an existing comment.
+
+**Request:**
+```http
+POST /api/v1/posts/{post_id}/comments/{parent_comment_id}/reply
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "content": "This is my reply to the comment!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Reply created successfully",
+  "data": {
+    "id": "comment-uuid-def456",
+    "post_id": "post-uuid-123",
+    "user_id": "user-uuid-789",
+    "content": "This is my reply to the comment!",
+    "parent_id": "comment-uuid-abc123",
+    "created_at": "2023-12-01T10:35:00Z",
+    "updated_at": "2023-12-01T10:35:00Z"
+  },
+  "timestamp": "2023-12-01T10:35:00Z"
+}
+```
+
+**Frontend Implementation:**
+```javascript
+const createReply = async (postId, parentCommentId, content) => {
+  try {
+    const accessToken = localStorage.getItem('access_token');
+    const response = await fetch(`/api/v1/posts/${postId}/comments/${parentCommentId}/reply`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: content,
+      }),
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error?.message || 'Failed to create reply');
+    }
+  } catch (error) {
+    console.error('Error creating reply:', error);
+    throw error;
+  }
+};
+```
+
+### 6. Get Comments for Post
+
+Get all comments for a specific post (alternative to getting them via the single post endpoint).
+
+**Request:**
+```http
+GET /api/v1/posts/{post_id}/comments
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Comments retrieved successfully",
+  "data": [
+    {
+      "id": "comment-uuid-123",
+      "post_id": "post-uuid-abc123",
+      "user_id": "user-uuid-456",
+      "user": {
+        "username": "janesmith",
+        "display_name": "Jane Smith",
+        "avatar_url": "https://example.com/avatar/jane.jpg"
+      },
+      "content": "Great post!",
+      "parent_id": null,
+      "replies": [
+        {
+          "id": "comment-uuid-789",
+          "post_id": "post-uuid-abc123",
+          "user_id": "user-uuid-123",
+          "user": {
+            "username": "johndoe",
+            "display_name": "John Doe",
+            "avatar_url": "https://example.com/avatar/john.jpg"
+          },
+          "content": "Thank you!",
+          "parent_id": "comment-uuid-123",
+          "created_at": "2023-12-01T10:35:00Z",
+          "updated_at": "2023-12-01T10:35:00Z"
+        }
+      ],
+      "created_at": "2023-12-01T10:32:00Z",
+      "updated_at": "2023-12-01T10:32:00Z"
+    }
+  ],
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Frontend Implementation:**
+```javascript
+const getPostComments = async (postId) => {
+  try {
+    const accessToken = localStorage.getItem('access_token');
+    const response = await fetch(`/api/v1/posts/${postId}/comments`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error?.message || 'Failed to retrieve comments');
+    }
+  } catch (error) {
+    console.error('Error fetching comments:', error);
     throw error;
   }
 };

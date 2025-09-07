@@ -81,7 +81,7 @@ func main() {
 	// Register modular routes
 	auth.RegisterRoutes(v1, provider.AuthHandler)
 	user.RegisterRoutes(v1, provider.UserHandler)
-	post.RegisterRoutes(v1, provider.PostHandler)
+	post.RegisterRoutes(v1, provider.PostHandler, provider.CommentHandler, provider.LikeHandler)
 
 	if err := app.Listen(":" + cfg.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)

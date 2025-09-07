@@ -44,6 +44,8 @@ func runMigrations(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&userDomain.User{},
 		&postDomain.Post{},
+		&postDomain.Comment{},
+		&postDomain.Like{},
 	)
 
 	if err != nil {

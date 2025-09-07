@@ -8,12 +8,16 @@ import (
 
 // Post represents a post entity
 type Post struct {
-	ID        string                   `gorm:"primarykey" json:"id"`
-	UserID    string                   `gorm:"not null" json:"user_id" validate:"required"`
-	User      *userDomain.User         `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
-	Content   string                   `gorm:"type:text" json:"content" validate:"required"`
-	CreatedAt time.Time                `json:"created_at"`
-	UpdatedAt time.Time                `json:"updated_at"`
+	ID           string                   `gorm:"primarykey" json:"id"`
+	UserID       string                   `gorm:"not null" json:"user_id" validate:"required"`
+	User         *userDomain.User         `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
+	Content      string                   `gorm:"type:text" json:"content" validate:"required"`
+	Comments     []Comment                `gorm:"foreignKey:PostID" json:"comments,omitempty"`
+	CommentCount int64                    `gorm:"-" json:"comment_count"`
+	Likes        []Like                   `gorm:"foreignKey:PostID" json:"likes,omitempty"`
+	LikeCount    int64                    `gorm:"-" json:"like_count"`
+	CreatedAt    time.Time                `json:"created_at"`
+	UpdatedAt    time.Time                `json:"updated_at"`
 }
 
 // TableName specifies the table name for the Post model

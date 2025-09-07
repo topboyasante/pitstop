@@ -24,12 +24,14 @@ type UpdatePostRequest struct {
 
 // PostResponse represents a post in API responses
 type PostResponse struct {
-	ID        string            `json:"id"`
-	UserID    string            `json:"user_id"`
-	Content   string            `json:"content"`
-	User      *PostUserResponse `json:"user"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	ID           string            `json:"id"`
+	UserID       string            `json:"user_id"`
+	Content      string            `json:"content"`
+	User         *PostUserResponse `json:"user"`
+	CommentCount int64             `json:"comment_count"`
+	LikeCount    int64             `json:"like_count"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
 }
 
 // PostsResponse represents a paginated list of posts

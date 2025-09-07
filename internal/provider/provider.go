@@ -29,14 +29,18 @@ type Provider struct {
 	EventBus  *events.EventBus
 
 	// Handlers
-	AuthHandler *authHandler.AuthHandler
-	UserHandler *userHandler.UserHandler
-	PostHandler *postHandler.PostHandler
+	AuthHandler    *authHandler.AuthHandler
+	UserHandler    *userHandler.UserHandler
+	PostHandler    *postHandler.PostHandler
+	CommentHandler *postHandler.CommentHandler
+	LikeHandler    *postHandler.LikeHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
-	AuthService *authService.AuthService
-	UserService *userService.UserService
-	PostService *postService.PostService
+	AuthService    *authService.AuthService
+	UserService    *userService.UserService
+	PostService    *postService.PostService
+	CommentService *postService.CommentService
+	LikeService    *postService.LikeService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -51,8 +55,18 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 
 	// Initialize Post module
 	postRepo := postRepository.NewPostRepository(db)
-	postService := postService.NewPostService(postRepo, validator, eventBus)
-	postHandler := postHandler.NewPostHandler(postService)
+	postSvc := postService.NewPostService(postRepo, validator, eventBus)
+	postHdlr := postHandler.NewPostHandler(postSvc)
+
+	// Initialize Comment module
+	commentRepo := postRepository.NewCommentRepository(db)
+	commentSvc := postService.NewCommentService(commentRepo, postRepo)
+	commentHdlr := postHandler.NewCommentHandler(commentSvc)
+
+	// Initialize Like module
+	likeRepo := postRepository.NewLikeRepository(db)
+	likeSvc := postService.NewLikeService(likeRepo, postRepo, eventBus)
+	likeHdlr := postHandler.NewLikeHandler(likeSvc)
 
 	// Initialize Auth module (depends on user service)
 	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userService)
@@ -68,13 +82,17 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		Validator: validator,
 		EventBus:  eventBus,
 
-		AuthHandler: authHandler,
-		UserHandler: userHandler,
-		PostHandler: postHandler,
+		AuthHandler:    authHandler,
+		UserHandler:    userHandler,
+		PostHandler:    postHdlr,
+		CommentHandler: commentHdlr,
+		LikeHandler:    likeHdlr,
 
-		AuthService: authService,
-		UserService: userService,
-		PostService: postService,
+		AuthService:    authService,
+		UserService:    userService,
+		PostService:    postSvc,
+		CommentService: commentSvc,
+		LikeService:    likeSvc,
 	}
 }
 
@@ -86,9 +104,7 @@ func setupEventSubscribers(eventBus *events.EventBus, authService *authService.A
 		logger.Info("Recieved a pblished event",
 			"event", event)
 
-		// create a user record in the db if we have to
-		// Generate the neccessary tokens they need
-		//return the tokens to the client or sth
+		// Could trigger welcome email, create default garage, etc.
 	})
 
 	// Example: When a user registers, other modules can react

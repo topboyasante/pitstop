@@ -62,11 +62,13 @@ func (s *PostService) GetPostByID(id string) (*dto.PostResponse, error) {
 	}
 
 	response := &dto.PostResponse{
-		ID:        post.ID,
-		UserID:    post.UserID,
-		Content:   post.Content,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
+		ID:           post.ID,
+		UserID:       post.UserID,
+		Content:      post.Content,
+		CommentCount: post.CommentCount,
+		LikeCount:    post.LikeCount,
+		CreatedAt:    post.CreatedAt,
+		UpdatedAt:    post.UpdatedAt,
 	}
 
 	if post.User != nil {
@@ -97,11 +99,13 @@ func (s *PostService) GetAllPosts(page, limit int) (*dto.PostsResponse, error) {
 	postResponses := make([]dto.PostResponse, len(posts))
 	for i, post := range posts {
 		postResponses[i] = dto.PostResponse{
-			ID:        post.ID,
-			UserID:    post.UserID,
-			Content:   post.Content,
-			CreatedAt: post.CreatedAt,
-			UpdatedAt: post.UpdatedAt,
+			ID:           post.ID,
+			UserID:       post.UserID,
+			Content:      post.Content,
+			CommentCount: post.CommentCount,
+			LikeCount:    post.LikeCount,
+			CreatedAt:    post.CreatedAt,
+			UpdatedAt:    post.UpdatedAt,
 		}
 
 		if post.User != nil {
