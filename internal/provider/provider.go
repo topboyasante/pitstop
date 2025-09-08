@@ -11,6 +11,9 @@ import (
 	postHandler "github.com/topboyasante/pitstop/internal/modules/post/handler"
 	postRepository "github.com/topboyasante/pitstop/internal/modules/post/repository"
 	postService "github.com/topboyasante/pitstop/internal/modules/post/service"
+	questionHandler "github.com/topboyasante/pitstop/internal/modules/question/handler"
+	questionRepository "github.com/topboyasante/pitstop/internal/modules/question/repository"
+	questionService "github.com/topboyasante/pitstop/internal/modules/question/service"
 	userHandler "github.com/topboyasante/pitstop/internal/modules/user/handler"
 	userRepository "github.com/topboyasante/pitstop/internal/modules/user/repository"
 	userService "github.com/topboyasante/pitstop/internal/modules/user/service"
@@ -30,21 +33,25 @@ type Provider struct {
 	EventBus  *events.EventBus
 
 	// Handlers
-	AuthHandler    *authHandler.AuthHandler
-	UserHandler    *userHandler.UserHandler
-	PostHandler    *postHandler.PostHandler
-	CommentHandler *postHandler.CommentHandler
-	LikeHandler    *postHandler.LikeHandler
-	FollowHandler  *userHandler.FollowHandler
-	HealthHandler  *healthHandler.HealthHandler
+	AuthHandler     *authHandler.AuthHandler
+	UserHandler     *userHandler.UserHandler
+	PostHandler     *postHandler.PostHandler
+	CommentHandler  *postHandler.CommentHandler
+	LikeHandler     *postHandler.LikeHandler
+	FollowHandler   *userHandler.FollowHandler
+	HealthHandler   *healthHandler.HealthHandler
+	QuestionHandler *questionHandler.QuestionHandler
+	AnswerHandler   *questionHandler.AnswerHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
-	AuthService    *authService.AuthService
-	UserService    *userService.UserService
-	PostService    *postService.PostService
-	CommentService *postService.CommentService
-	LikeService    *postService.LikeService
-	FollowService  *userService.FollowService
+	AuthService     *authService.AuthService
+	UserService     *userService.UserService
+	PostService     *postService.PostService
+	CommentService  *postService.CommentService
+	LikeService     *postService.LikeService
+	FollowService   *userService.FollowService
+	QuestionService *questionService.QuestionService
+	AnswerService   *questionService.AnswerService
 }
 
 // NewProvider creates and initializes the dependency injection container
@@ -77,6 +84,16 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	likeSvc := postService.NewLikeService(likeRepo, postRepo, eventBus)
 	likeHdlr := postHandler.NewLikeHandler(likeSvc)
 
+	// Initialize Question module
+	questionRepo := questionRepository.NewQuestionRepository(db)
+	questionSvc := questionService.NewQuestionService(questionRepo, validator, eventBus)
+	questionHdlr := questionHandler.NewQuestionHandler(questionSvc)
+
+	// Initialize Answer module
+	answerRepo := questionRepository.NewAnswerRepository(db)
+	answerSvc := questionService.NewAnswerService(answerRepo, questionRepo, validator, eventBus)
+	answerHdlr := questionHandler.NewAnswerHandler(answerSvc)
+
 	// Initialize Auth module (depends on user service)
 	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userSvc)
 	authHandler := authHandler.NewAuthHandler(authService)
@@ -94,20 +111,24 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		Validator: validator,
 		EventBus:  eventBus,
 
-		AuthHandler:    authHandler,
-		UserHandler:    userHdlr,
-		PostHandler:    postHdlr,
-		CommentHandler: commentHdlr,
-		LikeHandler:    likeHdlr,
-		FollowHandler:  followHdlr,
-		HealthHandler:  healthHdlr,
+		AuthHandler:     authHandler,
+		UserHandler:     userHdlr,
+		PostHandler:     postHdlr,
+		CommentHandler:  commentHdlr,
+		LikeHandler:     likeHdlr,
+		FollowHandler:   followHdlr,
+		HealthHandler:   healthHdlr,
+		QuestionHandler: questionHdlr,
+		AnswerHandler:   answerHdlr,
 
-		AuthService:    authService,
-		UserService:    userSvc,
-		PostService:    postSvc,
-		CommentService: commentSvc,
-		LikeService:    likeSvc,
-		FollowService:  followSvc,
+		AuthService:     authService,
+		UserService:     userSvc,
+		PostService:     postSvc,
+		CommentService:  commentSvc,
+		LikeService:     likeSvc,
+		FollowService:   followSvc,
+		QuestionService: questionSvc,
+		AnswerService:   answerSvc,
 	}
 }
 

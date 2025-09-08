@@ -6,6 +6,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/core/config"
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	postDomain "github.com/topboyasante/pitstop/internal/modules/post/domain"
+	questionDomain "github.com/topboyasante/pitstop/internal/modules/question/domain"
 	userDomain "github.com/topboyasante/pitstop/internal/modules/user/domain"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -47,6 +48,8 @@ func runMigrations(db *gorm.DB) error {
 		&postDomain.Post{},
 		&postDomain.Comment{},
 		&postDomain.Like{},
+		&questionDomain.Question{},
+		&questionDomain.Answer{},
 	)
 
 	if err != nil {

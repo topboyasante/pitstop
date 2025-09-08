@@ -21,6 +21,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/modules/auth"
 	"github.com/topboyasante/pitstop/internal/modules/health"
 	"github.com/topboyasante/pitstop/internal/modules/post"
+	"github.com/topboyasante/pitstop/internal/modules/question"
 	"github.com/topboyasante/pitstop/internal/modules/user"
 	"github.com/topboyasante/pitstop/internal/provider"
 )
@@ -84,6 +85,7 @@ func main() {
 	auth.RegisterRoutes(v1, provider.AuthHandler)
 	user.RegisterRoutes(v1, provider.UserHandler, provider.FollowHandler)
 	post.RegisterRoutes(v1, provider.PostHandler, provider.CommentHandler, provider.LikeHandler)
+	question.RegisterRoutes(v1, provider.QuestionHandler, provider.AnswerHandler)
 
 	if err := app.Listen(":" + cfg.Server.Port); err != nil {
 		logger.Fatal("failed to start server: %v", err)

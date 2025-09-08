@@ -1465,6 +1465,778 @@ const getUserFollowing = async (userId) => {
 
 ---
 
+## Questions & Answers Endpoints
+
+### 1. Get All Questions
+Retrieve a paginated list of all questions with user information, tags, and engagement metrics.
+
+**Endpoint:** `GET /questions`
+**Authentication:** Not required (Public)
+
+**Query Parameters:**
+- `page` (optional): Page number, default is 1
+- `limit` (optional): Number of questions per page, default is 20, max is 100
+
+**Request:**
+```http
+GET /api/v1/questions?page=1&limit=20
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Questions retrieved successfully",
+  "data": {
+    "questions": [
+      {
+        "id": "question-uuid-123",
+        "user_id": "user-uuid-456",
+        "title": "How do I tune my BMW E46 M3 for better track performance?",
+        "content": "I have a 2003 BMW E46 M3 and want to optimize it for track days. What are the best modifications for better lap times while keeping it street legal?",
+        "tags": ["bmw", "e46", "m3", "tuning", "track"],
+        "is_answered": true,
+        "user": {
+          "username": "john_doe_123",
+          "display_name": "John Doe",
+          "avatar_url": "https://lh3.googleusercontent.com/a/..."
+        },
+        "comment_count": 8,
+        "like_count": 15,
+        "answer_count": 3,
+        "created_at": "2023-12-01T10:30:00Z",
+        "updated_at": "2023-12-01T10:30:00Z"
+      }
+    ],
+    "total_count": 75,
+    "page": 1,
+    "limit": 20,
+    "has_next": true
+  },
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 4,
+      "total_items": 75,
+      "items_per_page": 20,
+      "has_next": true,
+      "has_prev": false
+    }
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const getQuestions = async (page = 1, limit = 20) => {
+  const response = await fetch(`/api/v1/questions?page=${page}&limit=${limit}`);
+  const result = await response.json();
+  
+  if (result.success) {
+    return {
+      questions: result.data.questions,
+      pagination: result.meta.pagination
+    };
+  }
+  throw new Error(result.error?.message || 'Failed to fetch questions');
+};
+```
+
+---
+
+### 2. Get Single Question
+Retrieve a specific question by ID with user information, tags, and engagement metrics.
+
+**Endpoint:** `GET /questions/{id}`
+**Authentication:** Not required (Public)
+
+**Request:**
+```http
+GET /api/v1/questions/question-uuid-123
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Question retrieved successfully",
+  "data": {
+    "id": "question-uuid-123",
+    "user_id": "user-uuid-456",
+    "title": "How do I tune my BMW E46 M3 for better track performance?",
+    "content": "I have a 2003 BMW E46 M3 and want to optimize it for track days. What are the best modifications for better lap times while keeping it street legal?",
+    "tags": ["bmw", "e46", "m3", "tuning", "track"],
+    "is_answered": true,
+    "user": {
+      "username": "john_doe_123",
+      "display_name": "John Doe",
+      "avatar_url": "https://lh3.googleusercontent.com/a/..."
+    },
+    "comment_count": 8,
+    "like_count": 15,
+    "answer_count": 3,
+    "created_at": "2023-12-01T10:30:00Z",
+    "updated_at": "2023-12-01T10:30:00Z"
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const getQuestion = async (questionId) => {
+  const response = await fetch(`/api/v1/questions/${questionId}`);
+  const result = await response.json();
+  
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error(result.error?.message || 'Failed to fetch question');
+};
+```
+
+---
+
+### 3. Get Questions by Tag
+Retrieve questions filtered by a specific tag with pagination.
+
+**Endpoint:** `GET /questions/tag`
+**Authentication:** Not required (Public)
+
+**Query Parameters:**
+- `tag` (required): Tag to filter by
+- `page` (optional): Page number, default is 1
+- `limit` (optional): Number of questions per page, default is 20, max is 100
+
+**Request:**
+```http
+GET /api/v1/questions/tag?tag=bmw&page=1&limit=20
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Questions retrieved successfully",
+  "data": {
+    "questions": [
+      {
+        "id": "question-uuid-123",
+        "title": "How do I tune my BMW E46 M3 for better track performance?",
+        "content": "I have a 2003 BMW E46 M3...",
+        "tags": ["bmw", "e46", "m3", "tuning", "track"],
+        "is_answered": true,
+        "user": {
+          "username": "john_doe_123",
+          "display_name": "John Doe",
+          "avatar_url": "https://lh3.googleusercontent.com/a/..."
+        },
+        "comment_count": 8,
+        "like_count": 15,
+        "answer_count": 3,
+        "created_at": "2023-12-01T10:30:00Z",
+        "updated_at": "2023-12-01T10:30:00Z"
+      }
+    ],
+    "total_count": 25,
+    "page": 1,
+    "limit": 20,
+    "has_next": true
+  },
+  "timestamp": "2023-12-01T10:30:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const getQuestionsByTag = async (tag, page = 1, limit = 20) => {
+  const response = await fetch(`/api/v1/questions/tag?tag=${encodeURIComponent(tag)}&page=${page}&limit=${limit}`);
+  const result = await response.json();
+  
+  if (result.success) {
+    return {
+      questions: result.data.questions,
+      pagination: result.meta.pagination
+    };
+  }
+  throw new Error(result.error?.message || 'Failed to fetch questions by tag');
+};
+```
+
+---
+
+### 4. Create Question
+Ask a new question.
+
+**Endpoint:** `POST /questions`
+**Authentication:** Required (Bearer token)
+
+**Request Body:**
+```json
+{
+  "title": "What's the best oil for a high-mileage Toyota Supra?",
+  "content": "I have a 1997 Toyota Supra with 180,000 miles. What oil viscosity and brand would you recommend for optimal engine protection and performance?",
+  "tags": "toyota,supra,oil,maintenance,high-mileage"
+}
+```
+
+**Request:**
+```http
+POST /api/v1/questions
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "title": "What's the best oil for a high-mileage Toyota Supra?",
+  "content": "I have a 1997 Toyota Supra with 180,000 miles. What oil viscosity and brand would you recommend for optimal engine protection and performance?",
+  "tags": "toyota,supra,oil,maintenance,high-mileage"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Question created successfully",
+  "data": {
+    "id": "question-uuid-789",
+    "user_id": "user-uuid-456",
+    "title": "What's the best oil for a high-mileage Toyota Supra?",
+    "content": "I have a 1997 Toyota Supra with 180,000 miles. What oil viscosity and brand would you recommend for optimal engine protection and performance?",
+    "tags": ["toyota", "supra", "oil", "maintenance", "high-mileage"],
+    "is_answered": false,
+    "user": {
+      "username": "john_doe_123",
+      "display_name": "John Doe",
+      "avatar_url": "https://lh3.googleusercontent.com/a/..."
+    },
+    "comment_count": 0,
+    "like_count": 0,
+    "answer_count": 0,
+    "created_at": "2023-12-01T15:45:00Z",
+    "updated_at": "2023-12-01T15:45:00Z"
+  },
+  "timestamp": "2023-12-01T15:45:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const createQuestion = async (title, content, tags = "") => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch('/api/v1/questions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: title,
+      content: content,
+      tags: tags
+    }),
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error(result.error?.message || 'Failed to create question');
+};
+```
+
+---
+
+### 5. Update Question
+Update an existing question (only by the question author).
+
+**Endpoint:** `PUT /questions/{id}`
+**Authentication:** Required (Bearer token) - Question author only
+
+**Request Body:**
+```json
+{
+  "title": "What's the best synthetic oil for a high-mileage Toyota Supra?",
+  "content": "I have a 1997 Toyota Supra with 180,000 miles. Specifically looking for synthetic oil recommendations for optimal engine protection and performance. Budget is not a concern.",
+  "tags": "toyota,supra,synthetic-oil,maintenance,high-mileage,performance"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Question updated successfully",
+  "data": {
+    "id": "question-uuid-789",
+    "title": "What's the best synthetic oil for a high-mileage Toyota Supra?",
+    "content": "I have a 1997 Toyota Supra with 180,000 miles. Specifically looking for synthetic oil recommendations for optimal engine protection and performance. Budget is not a concern.",
+    "tags": ["toyota", "supra", "synthetic-oil", "maintenance", "high-mileage", "performance"],
+    "updated_at": "2023-12-01T16:00:00Z"
+  },
+  "timestamp": "2023-12-01T16:00:00Z"
+}
+```
+
+---
+
+### 6. Delete Question
+Delete a question (only by the question author).
+
+**Endpoint:** `DELETE /questions/{id}`
+**Authentication:** Required (Bearer token) - Question author only
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Question deleted successfully",
+  "data": null,
+  "timestamp": "2023-12-01T16:05:00Z"
+}
+```
+
+---
+
+## Answers Endpoints
+
+### 1. Get Answers for a Question
+Retrieve all answers for a specific question. Accepted answers are shown first.
+
+**Endpoint:** `GET /questions/{question_id}/answers`
+**Authentication:** Not required (Public)
+
+**Query Parameters:**
+- `page` (optional): Page number, default is 1
+- `limit` (optional): Number of answers per page, default is 20, max is 100
+
+**Request:**
+```http
+GET /api/v1/questions/question-uuid-123/answers?page=1&limit=20
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answers retrieved successfully",
+  "data": {
+    "answers": [
+      {
+        "id": "answer-uuid-abc",
+        "question_id": "question-uuid-123",
+        "user_id": "user-uuid-789",
+        "content": "For track performance on an E46 M3, I'd recommend: 1) Cold air intake (like Dinan or aFe), 2) Performance exhaust system, 3) Coilovers (KW V3 or Bilstein PSS10), 4) Lightweight wheels with sticky tires (Michelin Pilot Sport Cup 2), and 5) Brake pads upgrade (Hawk DTC-60 for track). These mods will significantly improve lap times while keeping it street legal.",
+        "is_accepted": true,
+        "user": {
+          "username": "track_expert",
+          "display_name": "Mike Track Expert",
+          "avatar_url": "https://lh3.googleusercontent.com/a/..."
+        },
+        "like_count": 12,
+        "created_at": "2023-12-01T11:00:00Z",
+        "updated_at": "2023-12-01T11:00:00Z"
+      },
+      {
+        "id": "answer-uuid-def",
+        "question_id": "question-uuid-123",
+        "user_id": "user-uuid-999",
+        "content": "Don't forget about weight reduction! Remove rear seats, spare tire, and consider a roll cage. Also, get an ECU tune after your intake and exhaust mods for maximum gains.",
+        "is_accepted": false,
+        "user": {
+          "username": "bmw_mechanic",
+          "display_name": "BMW Specialist",
+          "avatar_url": "https://lh3.googleusercontent.com/a/..."
+        },
+        "like_count": 7,
+        "created_at": "2023-12-01T11:15:00Z",
+        "updated_at": "2023-12-01T11:15:00Z"
+      }
+    ],
+    "total_count": 3,
+    "page": 1,
+    "limit": 20,
+    "has_next": false
+  },
+  "timestamp": "2023-12-01T12:00:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const getAnswers = async (questionId, page = 1, limit = 20) => {
+  const response = await fetch(`/api/v1/questions/${questionId}/answers?page=${page}&limit=${limit}`);
+  const result = await response.json();
+  
+  if (result.success) {
+    return {
+      answers: result.data.answers,
+      pagination: result.meta.pagination
+    };
+  }
+  throw new Error(result.error?.message || 'Failed to fetch answers');
+};
+```
+
+---
+
+### 2. Get Single Answer
+Retrieve a specific answer by ID.
+
+**Endpoint:** `GET /questions/{question_id}/answers/{answer_id}`
+**Authentication:** Not required (Public)
+
+**Request:**
+```http
+GET /api/v1/questions/question-uuid-123/answers/answer-uuid-abc
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer retrieved successfully",
+  "data": {
+    "id": "answer-uuid-abc",
+    "question_id": "question-uuid-123",
+    "user_id": "user-uuid-789",
+    "content": "For track performance on an E46 M3, I'd recommend: 1) Cold air intake (like Dinan or aFe), 2) Performance exhaust system...",
+    "is_accepted": true,
+    "user": {
+      "username": "track_expert",
+      "display_name": "Mike Track Expert",
+      "avatar_url": "https://lh3.googleusercontent.com/a/..."
+    },
+    "like_count": 12,
+    "created_at": "2023-12-01T11:00:00Z",
+    "updated_at": "2023-12-01T11:00:00Z"
+  },
+  "timestamp": "2023-12-01T12:00:00Z"
+}
+```
+
+---
+
+### 3. Create Answer
+Post an answer to a question.
+
+**Endpoint:** `POST /questions/{question_id}/answers`
+**Authentication:** Required (Bearer token)
+
+**Request Body:**
+```json
+{
+  "content": "I've been using Mobil 1 High Mileage 5W-30 in my high-mileage Supra for 2 years now. It has seal conditioners that help prevent leaks and reduces oil burn-off. Also consider Lucas Heavy Duty Oil Stabilizer as an additive - it really helps with older engines."
+}
+```
+
+**Request:**
+```http
+POST /api/v1/questions/question-uuid-789/answers
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "content": "I've been using Mobil 1 High Mileage 5W-30 in my high-mileage Supra for 2 years now..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer created successfully",
+  "data": {
+    "id": "answer-uuid-xyz",
+    "question_id": "question-uuid-789",
+    "user_id": "user-uuid-456",
+    "content": "I've been using Mobil 1 High Mileage 5W-30 in my high-mileage Supra for 2 years now. It has seal conditioners that help prevent leaks and reduces oil burn-off. Also consider Lucas Heavy Duty Oil Stabilizer as an additive - it really helps with older engines.",
+    "is_accepted": false,
+    "user": {
+      "username": "supra_owner",
+      "display_name": "Supra Owner",
+      "avatar_url": "https://lh3.googleusercontent.com/a/..."
+    },
+    "like_count": 0,
+    "created_at": "2023-12-01T16:20:00Z",
+    "updated_at": "2023-12-01T16:20:00Z"
+  },
+  "timestamp": "2023-12-01T16:20:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const createAnswer = async (questionId, content) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`/api/v1/questions/${questionId}/answers`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error(result.error?.message || 'Failed to create answer');
+};
+```
+
+---
+
+### 4. Update Answer
+Update an existing answer (only by the answer author).
+
+**Endpoint:** `PUT /questions/{question_id}/answers/{answer_id}`
+**Authentication:** Required (Bearer token) - Answer author only
+
+**Request Body:**
+```json
+{
+  "content": "I've been using Mobil 1 High Mileage 5W-30 in my high-mileage Supra for 3 years now (updated info). It has seal conditioners that help prevent leaks and reduces oil burn-off. Also consider Lucas Heavy Duty Oil Stabilizer as an additive - it really helps with older engines. UPDATE: Recently switched to Royal Purple HMX and seeing even better results!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer updated successfully",
+  "data": {
+    "id": "answer-uuid-xyz",
+    "content": "I've been using Mobil 1 High Mileage 5W-30 in my high-mileage Supra for 3 years now...",
+    "updated_at": "2023-12-01T16:30:00Z"
+  },
+  "timestamp": "2023-12-01T16:30:00Z"
+}
+```
+
+---
+
+### 5. Delete Answer
+Delete an answer (only by the answer author).
+
+**Endpoint:** `DELETE /questions/{question_id}/answers/{answer_id}`
+**Authentication:** Required (Bearer token) - Answer author only
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer deleted successfully",
+  "data": null,
+  "timestamp": "2023-12-01T16:35:00Z"
+}
+```
+
+---
+
+### 6. Accept Answer
+Mark an answer as the accepted solution (only by the question author).
+
+**Endpoint:** `POST /questions/{question_id}/answers/{answer_id}/accept`
+**Authentication:** Required (Bearer token) - Question author only
+
+**Request:**
+```http
+POST /api/v1/questions/question-uuid-789/answers/answer-uuid-xyz/accept
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer accepted successfully",
+  "data": null,
+  "timestamp": "2023-12-01T16:40:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const acceptAnswer = async (questionId, answerId) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`/api/v1/questions/${questionId}/answers/${answerId}/accept`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    return true;
+  }
+  throw new Error(result.error?.message || 'Failed to accept answer');
+};
+```
+
+---
+
+### 7. Unaccept Answer
+Remove the accepted status from an answer (only by the question author).
+
+**Endpoint:** `POST /questions/{question_id}/answers/{answer_id}/unaccept`
+**Authentication:** Required (Bearer token) - Question author only
+
+**Request:**
+```http
+POST /api/v1/questions/question-uuid-789/answers/answer-uuid-xyz/unaccept
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Answer unaccepted successfully",
+  "data": null,
+  "timestamp": "2023-12-01T16:45:00Z"
+}
+```
+
+**Frontend Usage:**
+```javascript
+const unacceptAnswer = async (questionId, answerId) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`/api/v1/questions/${questionId}/answers/${answerId}/unaccept`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    return true;
+  }
+  throw new Error(result.error?.message || 'Failed to unaccept answer');
+};
+```
+
+---
+
+## Questions & Answers Usage Examples
+
+### Complete Q&A Workflow
+```javascript
+// 1. Ask a question
+const askQuestion = async () => {
+  const question = await createQuestion(
+    "Best turbo upgrade for 2JZ-GTE?",
+    "I have a stock 2JZ-GTE and want to upgrade the turbo for more power. What are the most reliable options that won't require extensive internal modifications?",
+    "toyota,supra,2jz,turbo,upgrade"
+  );
+  console.log('Question asked:', question.id);
+  return question;
+};
+
+// 2. Browse questions by topic
+const browseQuestionsByTopic = async (topic) => {
+  const { questions, pagination } = await getQuestionsByTag(topic);
+  
+  questions.forEach(q => {
+    console.log(`${q.title} - ${q.answer_count} answers, ${q.is_answered ? 'Solved' : 'Open'}`);
+  });
+  
+  return { questions, pagination };
+};
+
+// 3. Answer a question
+const answerQuestion = async (questionId, answerText) => {
+  const answer = await createAnswer(questionId, answerText);
+  console.log('Answer posted:', answer.id);
+  return answer;
+};
+
+// 4. Accept best answer (if you're the question author)
+const acceptBestAnswer = async (questionId, answerId) => {
+  await acceptAnswer(questionId, answerId);
+  console.log('Answer accepted as solution');
+};
+
+// 5. Complete example workflow
+const completeQAWorkflow = async () => {
+  try {
+    // Ask a question
+    const newQuestion = await askQuestion();
+    
+    // Browse BMW-related questions
+    const bmwQuestions = await browseQuestionsByTopic('bmw');
+    
+    // Answer someone's question
+    if (bmwQuestions.questions.length > 0) {
+      const questionToAnswer = bmwQuestions.questions[0];
+      const myAnswer = await answerQuestion(
+        questionToAnswer.id,
+        "Based on my experience with E46 M3s, I'd recommend starting with a performance air filter and exhaust system before moving to more expensive modifications."
+      );
+      
+      // If this was our question, we could accept an answer
+      // await acceptAnswer(questionToAnswer.id, myAnswer.id);
+    }
+    
+  } catch (error) {
+    console.error('Q&A workflow failed:', error);
+  }
+};
+```
+
+### Question Search and Discovery
+```javascript
+// Search and filter functionality
+const searchQuestions = async (searchTerm, tags = []) => {
+  let questions = [];
+  
+  if (tags.length > 0) {
+    // Search by tags
+    for (const tag of tags) {
+      const tagQuestions = await getQuestionsByTag(tag);
+      questions = questions.concat(tagQuestions.questions);
+    }
+  } else {
+    // Get all questions and filter on frontend
+    const allQuestions = await getQuestions(1, 100);
+    questions = allQuestions.questions.filter(q => 
+      q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.content.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+  
+  return questions;
+};
+
+// Get trending questions (most answers/likes recently)
+const getTrendingQuestions = async () => {
+  const { questions } = await getQuestions(1, 50);
+  
+  // Sort by engagement score (answers + likes + comments)
+  return questions
+    .map(q => ({
+      ...q,
+      engagement_score: q.answer_count * 3 + q.like_count + q.comment_count
+    }))
+    .sort((a, b) => b.engagement_score - a.engagement_score)
+    .slice(0, 10);
+};
+
+// Get unanswered questions that need attention
+const getUnansweredQuestions = async () => {
+  const { questions } = await getQuestions(1, 100);
+  return questions
+    .filter(q => !q.is_answered && q.answer_count === 0)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+};
+```
+
+---
+
 ## Health Check Endpoint
 
 ### Health Status Check
