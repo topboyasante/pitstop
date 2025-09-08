@@ -7,6 +7,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/core/logger"
 	authHandler "github.com/topboyasante/pitstop/internal/modules/auth/handler"
 	authService "github.com/topboyasante/pitstop/internal/modules/auth/service"
+	healthHandler "github.com/topboyasante/pitstop/internal/modules/health/handler"
 	postHandler "github.com/topboyasante/pitstop/internal/modules/post/handler"
 	postRepository "github.com/topboyasante/pitstop/internal/modules/post/repository"
 	postService "github.com/topboyasante/pitstop/internal/modules/post/service"
@@ -35,6 +36,7 @@ type Provider struct {
 	CommentHandler *postHandler.CommentHandler
 	LikeHandler    *postHandler.LikeHandler
 	FollowHandler  *userHandler.FollowHandler
+	HealthHandler  *healthHandler.HealthHandler
 
 	// Module dependencies (can be accessed by other modules if needed)
 	AuthService    *authService.AuthService
@@ -79,6 +81,9 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 	authService := authService.NewAuthService(cfg, redis, eventBus, validator, userSvc)
 	authHandler := authHandler.NewAuthHandler(authService)
 
+	// Initialize Health module
+	healthHdlr := healthHandler.NewHealthHandler(db, redis)
+
 	// Set up event subscribers
 	setupEventSubscribers(eventBus, authService)
 
@@ -95,6 +100,7 @@ func NewProvider(db *gorm.DB, redis *redis.Client, cfg *config.Config, validator
 		CommentHandler: commentHdlr,
 		LikeHandler:    likeHdlr,
 		FollowHandler:  followHdlr,
+		HealthHandler:  healthHdlr,
 
 		AuthService:    authService,
 		UserService:    userSvc,

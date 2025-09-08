@@ -19,6 +19,7 @@ import (
 	"github.com/topboyasante/pitstop/internal/core/middleware"
 	"github.com/topboyasante/pitstop/internal/core/redis"
 	"github.com/topboyasante/pitstop/internal/modules/auth"
+	"github.com/topboyasante/pitstop/internal/modules/health"
 	"github.com/topboyasante/pitstop/internal/modules/post"
 	"github.com/topboyasante/pitstop/internal/modules/user"
 	"github.com/topboyasante/pitstop/internal/provider"
@@ -79,6 +80,7 @@ func main() {
 	v1 := app.Group("/api/v1")
 
 	// Register modular routes
+	health.RegisterRoutes(v1, provider.HealthHandler)
 	auth.RegisterRoutes(v1, provider.AuthHandler)
 	user.RegisterRoutes(v1, provider.UserHandler, provider.FollowHandler)
 	post.RegisterRoutes(v1, provider.PostHandler, provider.CommentHandler, provider.LikeHandler)
